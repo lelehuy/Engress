@@ -2,6 +2,7 @@ import { PenTool, Mic, BookOpen, Headphones, ArrowRight, Trophy, Zap, Book } fro
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { GetAppState } from "../../wailsjs/go/main/App";
+import { getCategoryColorClass } from '../utils/categoryColors';
 import Writing from './StudyVault/Writing';
 import Speaking from './StudyVault/Speaking';
 import Reading from './StudyVault/Reading';
@@ -136,8 +137,8 @@ const StudyVault = ({ initialCategory, sessionState, onUpdateSession, onTriggerR
                         key={cat.id}
                         onClick={() => handleCategorySelect(cat.id)}
                         className={`glass p-6 lg:p-10 rounded-[2rem] lg:rounded-[3rem] text-left group transition-all flex justify-between items-center relative overflow-hidden ${sessionState.category === cat.id
-                            ? 'border-indigo-500 bg-indigo-500/10 shadow-[0_0_25px_rgba(99,102,241,0.15)]'
-                            : 'hover:border-indigo-500/30'
+                            ? `border-indigo-500 bg-indigo-500/10 shadow-[0_0_25px_rgba(99,102,241,0.15)]`
+                            : `hover:${getCategoryColorClass(cat.id, 'border')}`
                             }`}
                     >
                         {sessionState.category === cat.id && (
@@ -151,9 +152,9 @@ const StudyVault = ({ initialCategory, sessionState, onUpdateSession, onTriggerR
                             </div>
                         )}
                         <div className="flex gap-4 lg:gap-8 items-center relative z-10 min-w-0 flex-1 mr-4">
-                            <div className={`shrink-0 w-14 h-14 lg:w-20 lg:h-20 rounded-2xl lg:rounded-3xl ${cat.bg} flex items-center justify-center shadow-lg ${sessionState.category === cat.id ? 'ring-2 ring-indigo-500 ring-offset-4 ring-offset-zinc-950' : ''
+                            <div className={`shrink-0 w-14 h-14 lg:w-20 lg:h-20 rounded-2xl lg:rounded-3xl ${getCategoryColorClass(cat.id, 'fill')} flex items-center justify-center shadow-lg ${sessionState.category === cat.id ? 'ring-2 ring-indigo-500 ring-offset-4 ring-offset-zinc-950' : ''
                                 }`}>
-                                <cat.icon className={`w-6 h-6 lg:w-10 lg:h-10 ${cat.color}`} />
+                                <cat.icon className={`w-6 h-6 lg:w-10 lg:h-10 ${getCategoryColorClass(cat.id, 'text')}`} />
                             </div>
                             <div className="space-y-0.5 lg:space-y-1 min-w-0 flex-1">
                                 <h3 className="text-lg lg:text-2xl font-bold text-white group-hover:text-indigo-300 transition-colors uppercase tracking-tight italic truncate">{cat.name}</h3>
@@ -168,33 +169,6 @@ const StudyVault = ({ initialCategory, sessionState, onUpdateSession, onTriggerR
                 ))}
             </div>
 
-            {/* Analytics Integration - Bento Style */}
-            <div className="grid grid-cols-12 gap-8">
-                <div className="col-span-8 glass rounded-[3rem] p-10 flex flex-col justify-between min-h-[220px]">
-                    <div className="space-y-2">
-                        <p className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em]">Overall Preparation</p>
-                        <h4 className="text-2xl font-bold text-white italic">Your velocity is {totalHours > 5 ? 'Stable' : 'Building'}.</h4>
-                    </div>
-                    <div className="flex items-center gap-6">
-                        <div className="flex-1 h-3 bg-zinc-900 rounded-full overflow-hidden">
-                            <motion.div
-                                initial={{ width: 0 }}
-                                animate={{ width: `${Math.min((totalHours / 100) * 100, 100)}%` }}
-                                className="h-full bg-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.5)]"
-                            />
-                        </div>
-                        <span className="text-sm font-bold text-zinc-400 tabular-nums">{totalHours} Hours Trained</span>
-                    </div>
-                </div>
-
-                <div className="col-span-4 glass rounded-[3rem] p-10 bg-indigo-600 shadow-2xl shadow-indigo-600/20 flex flex-col justify-center items-center text-center space-y-4 border-none group cursor-pointer active:scale-95 transition-transform">
-                    <p className="text-[10px] font-black text-white/60 uppercase tracking-widest">Mastery Level</p>
-                    <p className="text-5xl font-black italic text-white tracking-tighter">
-                        {totalHours > 50 ? 'Elite' : totalHours > 20 ? 'Silver' : 'Bronze'}
-                    </p>
-                    <p className="text-xs font-bold text-white uppercase tracking-widest">Active Streak: {streak} Sessions</p>
-                </div>
-            </div>
         </div>
     );
 };

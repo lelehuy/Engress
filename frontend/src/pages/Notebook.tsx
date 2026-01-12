@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Calendar as CalendarIcon, Clock, ChevronRight, Book, Lightbulb, X, Image as ImageIcon, ExternalLink, ChevronLeft, PenTool, Mic, BookOpen, Headphones, Trophy, Zap, Trash2 } from 'lucide-react';
 import { GetAppState, DeleteLog, DeleteVocabulary } from "../../wailsjs/go/main/App";
+import { getCategoryColorClass } from '../utils/categoryColors';
 
 const Notebook = ({ initialTab = 'sessions', initialSearch = '', initialId = null }: { initialTab?: 'vocabulary' | 'sessions', initialSearch?: string, initialId?: string | null }) => {
     const [activeTab, setActiveTab] = useState<'vocabulary' | 'sessions'>(initialTab);
@@ -10,6 +11,7 @@ const Notebook = ({ initialTab = 'sessions', initialSearch = '', initialId = nul
     const [vocabList, setVocabList] = useState<any[]>([]);
     const [sessionLogs, setSessionLogs] = useState<any[]>([]);
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+    const [dateRange, setDateRange] = useState<{ start: string; end: string }>({ start: '', end: '' });
 
     const fetchData = async () => {
         const state = await GetAppState();
@@ -86,10 +88,21 @@ const Notebook = ({ initialTab = 'sessions', initialSearch = '', initialId = nul
         { id: 'mockup', name: 'Mock Simulation', icon: Trophy, color: 'text-white', bg: 'bg-indigo-600/20' },
     ];
 
-    const filteredVocab = vocabList.filter(item =>
-        item.word.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.def.toLowerCase().includes(searchQuery.toLowerCase())
-    ).reverse();
+    const filteredVocab = vocabList.filter(item => {
+        const matchesSearch = item.word.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            item.def.toLowerCase().includes(searchQuery.toLowerCase());
+
+        let matchesDate = true;
+        if (dateRange.start && dateRange.end) {
+            matchesDate = item.date >= dateRange.start && item.date <= dateRange.end;
+        } else if (dateRange.start) {
+            matchesDate = item.date >= dateRange.start;
+        } else if (dateRange.end) {
+            matchesDate = item.date <= dateRange.end;
+        }
+
+        return matchesSearch && matchesDate;
+    }).reverse();
 
     const filteredLogs = sessionLogs.filter(log => {
         const matchesSearch = (log.reflection || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -97,7 +110,17 @@ const Notebook = ({ initialTab = 'sessions', initialSearch = '', initialId = nul
             (log.date || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
             (log.id || '').toLowerCase() === searchQuery.toLowerCase();
         const matchesCategory = selectedCategory ? (log.module || '').toLowerCase() === selectedCategory : true;
-        return matchesSearch && matchesCategory;
+
+        let matchesDate = true;
+        if (dateRange.start && dateRange.end) {
+            matchesDate = log.date >= dateRange.start && log.date <= dateRange.end;
+        } else if (dateRange.start) {
+            matchesDate = log.date >= dateRange.start;
+        } else if (dateRange.end) {
+            matchesDate = log.date <= dateRange.end;
+        }
+
+        return matchesSearch && matchesCategory && matchesDate;
     }).reverse();
 
     const [showDetail, setShowDetail] = useState(false);
@@ -134,6 +157,38 @@ const Notebook = ({ initialTab = 'sessions', initialSearch = '', initialId = nul
                     >
                         Sessions
                     </button>
+                </div>
+
+                {/* Date Range Filter */}
+                <div className="flex flex-col gap-2">
+                    <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest pl-2">Filter by Period</span>
+                    <div className="flex items-center gap-2">
+                        <div className="relative flex-1 group">
+                            <input
+                                type="date"
+                                value={dateRange.start}
+                                onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
+                                className="w-full bg-zinc-900/50 border border-white/5 rounded-xl py-2 px-3 text-[9px] uppercase font-black tracking-widest text-zinc-400 outline-none focus:border-indigo-500/30 transition-all [color-scheme:dark]"
+                            />
+                        </div>
+                        <span className="text-zinc-700 font-bold text-[10px]">TO</span>
+                        <div className="relative flex-1 group">
+                            <input
+                                type="date"
+                                value={dateRange.end}
+                                onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
+                                className="w-full bg-zinc-900/50 border border-white/5 rounded-xl py-2 px-3 text-[9px] uppercase font-black tracking-widest text-zinc-400 outline-none focus:border-indigo-500/30 transition-all [color-scheme:dark]"
+                            />
+                        </div>
+                        {(dateRange.start || dateRange.end) && (
+                            <button
+                                onClick={() => setDateRange({ start: '', end: '' })}
+                                className="p-2 text-zinc-600 hover:text-rose-500 transition-colors"
+                            >
+                                <X className="w-3.5 h-3.5" />
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-3 pb-20 lg:pb-10">
@@ -205,10 +260,7 @@ const Notebook = ({ initialTab = 'sessions', initialSearch = '', initialId = nul
                                                 className={`w-full glass p-4 sm:p-5 rounded-3xl text-left transition-all border group ${selectedItem?.id === log.id ? 'bg-white/10 border-indigo-500/30' : 'border-transparent hover:bg-white/5'}`}
                                             >
                                                 <div className="flex justify-between items-start mb-2">
-                                                    <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${log.module?.toLowerCase() === 'writing' ? 'bg-amber-500/10 border-amber-500/20 text-amber-500' :
-                                                        log.module?.toLowerCase() === 'speaking' ? 'bg-rose-500/10 border-rose-500/20 text-rose-500' :
-                                                            'bg-indigo-500/10 border-indigo-500/20 text-indigo-400'
-                                                        }`}>
+                                                    <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${getCategoryColorClass(log.module, 'fill')} ${getCategoryColorClass(log.module, 'border')} ${getCategoryColorClass(log.module, 'text')}`}>
                                                         {displayTitle}
                                                     </span>
                                                     <span className="text-[9px] font-mono text-zinc-600">{log.date}</span>
@@ -298,11 +350,7 @@ const Notebook = ({ initialTab = 'sessions', initialSearch = '', initialId = nul
                             <>
                                 <div className="space-y-4 border-b border-white/10 pb-8">
                                     <div className="flex items-center gap-3">
-                                        <span className={`px-3 py-1 rounded-full border text-[10px] font-black uppercase tracking-widest ${selectedItem.module?.toLowerCase() === 'writing' ? 'bg-amber-500/10 border-amber-500/20 text-amber-400' :
-                                            selectedItem.module?.toLowerCase() === 'speaking' ? 'bg-rose-500/10 border-rose-500/20 text-rose-400' :
-                                                selectedItem.module?.toLowerCase() === 'reading' ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' :
-                                                    'bg-indigo-500/10 border-indigo-500/20 text-indigo-400'
-                                            }`}>
+                                        <span className={`px-3 py-1 rounded-full border text-[10px] font-black uppercase tracking-widest ${getCategoryColorClass(selectedItem.module, 'fill')} ${getCategoryColorClass(selectedItem.module, 'border')} ${getCategoryColorClass(selectedItem.module, 'text')}`}>
                                             {selectedItem.module || 'General'} Session
                                         </span>
                                         <span className="text-zinc-500 text-xs font-mono">{selectedItem.date}</span>

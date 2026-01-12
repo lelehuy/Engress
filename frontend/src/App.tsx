@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Layout, Zap, Home, BookOpen, Calendar, BarChart3, Settings as SettingsIcon, CreditCard, Clock, Shield, PenTool, Mic, Book } from 'lucide-react';
+import { Layout, Zap, Home, BookOpen, Calendar, BarChart3, Settings as SettingsIcon, CreditCard, Clock, Shield, PenTool, Mic, Book, ChevronLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Dashboard from './pages/Dashboard';
 import StudyVault from './pages/StudyVault';
@@ -27,6 +27,7 @@ function App() {
     const [notebookSearch, setNotebookSearch] = useState('');
     const [lastSessionData, setLastSessionData] = useState<any>(null);
     const [notebookTab, setNotebookTab] = useState<'vocabulary' | 'sessions'>('sessions');
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [activeSession, setActiveSession] = useState<{
         category: string | null;
         startTime: number;
@@ -112,15 +113,21 @@ function App() {
     }, [activeSession.isActive, activeSession.category]);
 
     const handleFinish = async () => {
-        // Capture session data immediately
-        const sessionToSave = { ...activeSession };
+        // Capture session data immediately from ref to get the absolute latest state
+        const sessionToSave = { ...sessionRef.current };
         const category = sessionToSave.category;
         const sessionData = sessionToSave.data;
-        const duration = Math.ceil((sessionData?.duration || 0) / 60);
+
+        let duration = sessionData?.duration || 0;
+        if (duration === 0 && sessionToSave.startTime > 0) {
+            duration = Math.floor((Date.now() - sessionToSave.startTime) / 1000);
+        }
+        duration = Math.ceil(duration / 60);
 
         // 1. IMMEDIATE UI TRANSITION (Crucial for "One Click" feel)
         setActiveSession({ category: null, startTime: 0, data: null, isActive: false });
         setVaultCategory(null);
+        setSidebarCollapsed(false);
         setCurrentPage('summary');
         setLastDuration(duration);
 
@@ -136,7 +143,19 @@ function App() {
         if (category === 'writing') {
             const essays = sessionData?.submittedEssays || [];
             content = essays.map((e: any) => `TITLE: ${e.title}\n${e.content}`).join('\n\n---\n\n');
-            if (sessionData?.text && !content.includes(sessionData.text)) {
+
+            // Log Unfinished Task 1
+            if (sessionData?.task1Data?.text && !content.includes(sessionData.task1Data.text)) {
+                content += content ? '\n\n---\n\n' : '';
+                content += `UNFINISHED TASK 1:\nPREMISE: ${sessionData.task1Data.premise || 'N/A'}\n${sessionData.task1Data.text}`;
+            }
+            // Log Unfinished Task 2
+            if (sessionData?.task2Data?.text && !content.includes(sessionData.task2Data.text)) {
+                content += content ? '\n\n---\n\n' : '';
+                content += `UNFINISHED TASK 2:\nPREMISE: ${sessionData.task2Data.premise || 'N/A'}\n${sessionData.task2Data.text}`;
+            }
+            // Fallback for old data format
+            if (sessionData?.text && !sessionData?.task1Data && !sessionData?.task2Data && !content.includes(sessionData.text)) {
                 content += content ? '\n\n---\n\n' : '';
                 content += `UNFINISHED DRAFT:\n${sessionData.text}`;
             }
@@ -201,12 +220,12 @@ function App() {
         <div className="flex h-screen w-full bg-zinc-950 text-zinc-100 overflow-hidden">
             {/* Sidebar - Hide during focus modules or on small screens */}
             {(!activeSession.isActive || !activeSession.category) && (
-                <aside className="hidden md:flex w-64 glass border-r h-full flex-col p-4 animate-in slide-in-from-left duration-500">
-                    <div className="flex items-center gap-3 mb-10 px-2 pt-6">
-                        <div className="bg-indigo-600 p-2 rounded-xl shadow-lg shadow-indigo-500/20">
+                <aside className={`hidden md:flex ${sidebarCollapsed ? 'w-20' : 'w-64'} glass border-r h-full flex-col p-4 transition-all duration-300 relative group`}>
+                    <div className={`flex items-center gap-3 mb-10 px-2 pt-6 ${sidebarCollapsed ? 'justify-center' : ''}`}>
+                        <div className="bg-indigo-600 p-2 rounded-xl shadow-lg shadow-indigo-500/20 shrink-0">
                             <Shield className="w-6 h-6 text-white" />
                         </div>
-                        <span className="text-xl font-bold tracking-tight italic uppercase">Engress</span>
+                        {!sidebarCollapsed && <span className="text-xl font-bold tracking-tight italic uppercase animate-in fade-in duration-500">Engress</span>}
                     </div>
 
                     <nav className="flex-1 space-y-1">
@@ -217,24 +236,35 @@ function App() {
                                     setVaultCategory(null);
                                     setCurrentPage(item.id);
                                 }}
+                                title={sidebarCollapsed ? item.label : ""}
                                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${currentPage === item.id
                                     ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/20 shadow-lg shadow-indigo-500/5'
                                     : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900/50'
-                                    }`}
+                                    } ${sidebarCollapsed ? 'justify-center px-0' : ''}`}
                             >
                                 <item.icon className="w-5 h-5 shrink-0" />
-                                <span className="font-medium text-sm tracking-tight">{item.label}</span>
+                                {!sidebarCollapsed && <span className="font-medium text-sm tracking-tight animate-in fade-in duration-500">{item.label}</span>}
                             </button>
                         ))}
                     </nav>
 
-                    <div className="mt-8 pt-6 border-t border-zinc-800/50 px-2 pb-4">
+                    <div className="mt-8 pt-6 border-t border-zinc-800/50 px-2 pb-4 space-y-2">
                         <button
                             onClick={() => setCurrentPage('settings')}
-                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${currentPage === 'settings' ? 'bg-indigo-600/20 text-indigo-400' : 'text-zinc-500 hover:text-white'}`}
+                            title={sidebarCollapsed ? "Settings" : ""}
+                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${currentPage === 'settings' ? 'bg-indigo-600/20 text-indigo-400' : 'text-zinc-500 hover:text-white'} ${sidebarCollapsed ? 'justify-center px-0' : ''}`}
                         >
                             <SettingsIcon className="w-5 h-5 shrink-0" />
-                            <span className="font-medium text-sm">Settings</span>
+                            {!sidebarCollapsed && <span className="font-medium text-sm animate-in fade-in duration-500">Settings</span>}
+                        </button>
+
+                        <button
+                            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                            className="w-full flex items-center justify-center p-2 text-zinc-600 hover:text-white transition-colors"
+                        >
+                            <div className={`transition-transform duration-500 ${sidebarCollapsed ? 'rotate-180' : ''}`}>
+                                <ChevronLeft className="w-4 h-4" />
+                            </div>
                         </button>
                     </div>
                 </aside>
@@ -273,12 +303,17 @@ function App() {
                             <Shield className="w-4 h-4 text-white" />
                         </div>
 
-                        {activeSession.isActive && activeSession.category ? (
+                        {activeSession.category ? (
                             <div className="flex items-center gap-3">
-                                <div className="bg-rose-500 p-1.5 rounded-lg shadow-lg shadow-rose-500/20">
-                                    <Zap className="w-4 h-4 text-white animate-pulse" />
+                                <div className={`p-1.5 rounded-lg shadow-lg transition-colors ${activeSession.isActive ? 'bg-rose-500 shadow-rose-500/20' : 'bg-amber-500 shadow-amber-500/20'}`}>
+                                    <Zap className={`w-4 h-4 text-white ${activeSession.isActive ? 'animate-pulse' : ''}`} />
                                 </div>
-                                <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-white truncate max-w-[150px]">Focus: {activeSession.category}</span>
+                                <div className="flex flex-col">
+                                    <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-white truncate max-w-[150px]">
+                                        {activeSession.isActive ? 'Focus:' : 'Paused:'} {activeSession.category}
+                                    </span>
+                                    {!activeSession.isActive && <span className="text-[8px] font-bold text-zinc-500 uppercase tracking-tighter">Session Ready</span>}
+                                </div>
                             </div>
                         ) : (
                             <div className="glass px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl flex items-center gap-2 sm:gap-3">
@@ -293,11 +328,11 @@ function App() {
                     </div>
 
                     <div className="flex items-center gap-4">
-                        {activeSession.isActive && (
+                        {activeSession.category && (
                             <div className="flex items-center gap-2 sm:gap-4 animate-in fade-in slide-in-from-right duration-700">
                                 <div className="hidden lg:flex text-[10px] font-bold text-zinc-500 uppercase tracking-widest items-center gap-2">
-                                    <div className="w-2 h-2 rounded-full bg-rose-500" />
-                                    Recording Progress
+                                    <div className={`w-2 h-2 rounded-full ${activeSession.isActive ? 'bg-rose-500 animate-pulse' : 'bg-amber-500'}`} />
+                                    {activeSession.isActive ? 'Recording Progress' : 'Session Ready'}
                                 </div>
                                 <button
                                     onClick={handleFinish}
@@ -353,7 +388,14 @@ function App() {
                                     }}
                                     onUpdateSession={(data: any) => {
                                         setActiveSession((prev: any) => {
-                                            if (!prev.isActive && !data.isActive) return prev;
+                                            // Only ignore if both are inactive AND there's no new category (no session starting)
+                                            if (!prev.isActive && !data.isActive && !data.category) return prev;
+
+                                            // Auto-collapse sidebar when a session becomes active
+                                            if (data.isActive && !prev.isActive) {
+                                                setSidebarCollapsed(true);
+                                            }
+
                                             return {
                                                 ...prev,
                                                 category: data.category || prev.category || vaultCategory,

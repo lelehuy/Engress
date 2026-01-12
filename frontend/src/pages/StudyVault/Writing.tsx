@@ -11,28 +11,60 @@ const Writing = ({ onBack, onFinish, initialData, onUpdate }: {
     onUpdate?: (data: any) => void;
 }) => {
     const [duration, setSeconds] = useState(initialData?.duration || 0);
-    const [taskType, setTaskType] = useState<'task1' | 'task2'>(initialData?.taskType || 'task2');
-    const [text, setText] = useState(initialData?.text || '');
-    const [premise, setPremise] = useState(initialData?.premise || '');
-    const [wordCount, setWordCount] = useState(0);
+    const [taskType, setTaskType] = useState<'task1' | 'task2'>(initialData?.taskType || 'task1');
     const [submittedEssays, setSubmittedEssays] = useState<{ title: string, content: string, type: string }[]>(initialData?.submittedEssays || []);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [sourceUrl, setSourceUrl] = useState(initialData?.sourceUrl || '');
-    const [screenshot, setScreenshot] = useState(initialData?.screenshot || '');
+    const [wordCount, setWordCount] = useState(0);
+
+    // Separate data for Task 1 and Task 2
+    const [task1Data, setTask1Data] = useState(initialData?.task1Data || {
+        text: initialData?.taskType === 'task1' ? initialData.text || '' : '',
+        premise: initialData?.taskType === 'task1' ? initialData.premise || '' : '',
+        screenshot: initialData?.taskType === 'task1' ? initialData.screenshot || '' : '',
+        sourceUrl: initialData?.taskType === 'task1' ? initialData.sourceUrl || '' : ''
+    });
+
+    const [task2Data, setTask2Data] = useState(initialData?.task2Data || {
+        text: initialData?.taskType === 'task2' || !initialData?.taskType ? initialData?.text || '' : '',
+        premise: initialData?.taskType === 'task2' || !initialData?.taskType ? initialData?.premise || '' : '',
+        screenshot: initialData?.taskType === 'task2' || !initialData?.taskType ? initialData?.screenshot || '' : '',
+        sourceUrl: initialData?.taskType === 'task2' || !initialData?.taskType ? initialData?.sourceUrl || '' : ''
+    });
+
+    const activeData = taskType === 'task1' ? task1Data : task2Data;
+
+    const updateActiveData = (updates: Partial<typeof task1Data>) => {
+        if (taskType === 'task1') {
+            setTask1Data((prev: typeof task1Data) => ({ ...prev, ...updates }));
+        } else {
+            setTask2Data((prev: typeof task2Data) => ({ ...prev, ...updates }));
+        }
+    };
 
     const targetWords = taskType === 'task1' ? 150 : 250;
     const recommendedTime = taskType === 'task1' ? 20 : 40;
 
     useEffect(() => {
         if (onUpdate) {
-            onUpdate({ text, premise, duration, submittedEssays, taskType, sourceUrl, screenshot });
+            onUpdate({
+                taskType,
+                duration,
+                submittedEssays,
+                task1Data,
+                task2Data,
+                // Flatten current for compatibility
+                text: activeData.text,
+                premise: activeData.premise,
+                sourceUrl: activeData.sourceUrl,
+                screenshot: activeData.screenshot
+            });
         }
-    }, [text, premise, duration, submittedEssays, taskType, sourceUrl, screenshot, onUpdate]);
+    }, [taskType, duration, submittedEssays, task1Data, task2Data, onUpdate]);
 
     useEffect(() => {
-        const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+        const words = activeData.text.trim() ? activeData.text.trim().split(/\s+/).length : 0;
         setWordCount(words);
-    }, [text]);
+    }, [activeData.text]);
 
     const getIntensityColor = () => {
         if (wordCount === 0) return 'bg-zinc-800';
@@ -79,13 +111,17 @@ const Writing = ({ onBack, onFinish, initialData, onUpdate }: {
                         onClick={() => {
                             setIsSubmitting(true);
                             setTimeout(() => {
-                                setSubmittedEssays(prev => [...prev, { title: premise || 'Untitled Essay', content: text, type: taskType.toUpperCase() }]);
-                                setText('');
-                                setPremise('');
+                                setSubmittedEssays(prev => [...prev, {
+                                    title: activeData.premise || 'Untitled Essay',
+                                    content: activeData.text,
+                                    type: taskType.toUpperCase()
+                                }]);
+                                // Reset current task data
+                                updateActiveData({ text: '', premise: '', screenshot: '', sourceUrl: '' });
                                 setIsSubmitting(false);
                             }, 800);
                         }}
-                        disabled={!text.trim() || isSubmitting}
+                        disabled={!activeData.text.trim() || isSubmitting}
                         className="bg-zinc-900 hover:bg-zinc-800 text-zinc-400 border border-zinc-800 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all disabled:opacity-20"
                     >
                         {isSubmitting ? 'Archiving...' : 'Submit Draft'}
@@ -124,8 +160,8 @@ const Writing = ({ onBack, onFinish, initialData, onUpdate }: {
                                     <div className="relative group">
                                         <ExternalLink className="absolute left-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-600 group-focus-within:text-emerald-500 transition-colors" />
                                         <input
-                                            value={sourceUrl}
-                                            onChange={(e) => setSourceUrl(e.target.value)}
+                                            value={activeData.sourceUrl}
+                                            onChange={(e) => updateActiveData({ sourceUrl: e.target.value })}
                                             placeholder="Paste question link..."
                                             className="w-full bg-zinc-900/30 border border-white/5 rounded-2xl py-3.5 pl-11 pr-4 text-xs text-zinc-300 outline-none focus:border-emerald-500/30 transition-all placeholder:text-zinc-800"
                                         />
@@ -143,7 +179,7 @@ const Writing = ({ onBack, onFinish, initialData, onUpdate }: {
                                                             if (type.startsWith('image/')) {
                                                                 const blob = await item.getType(type);
                                                                 const reader = new FileReader();
-                                                                reader.onloadend = () => setScreenshot(reader.result as string);
+                                                                reader.onloadend = () => updateActiveData({ screenshot: reader.result as string });
                                                                 reader.readAsDataURL(blob);
                                                                 return;
                                                             }
@@ -158,11 +194,11 @@ const Writing = ({ onBack, onFinish, initialData, onUpdate }: {
                                             Paste Clip
                                         </button>
                                     </div>
-                                    {screenshot ? (
+                                    {activeData.screenshot ? (
                                         <div className="relative group overflow-hidden rounded-[2.5rem]">
-                                            <img src={screenshot} className="w-full h-40 object-cover border border-white/10 group-hover:scale-105 transition-transform duration-700" alt="Ref" />
+                                            <img src={activeData.screenshot} className="w-full h-40 object-cover border border-white/10 group-hover:scale-105 transition-transform duration-700" alt="Ref" />
                                             <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                <button onClick={() => setScreenshot('')} className="p-3 bg-rose-500 text-white rounded-full hover:scale-110 transition-transform shadow-xl shadow-rose-500/40">
+                                                <button onClick={() => updateActiveData({ screenshot: '' })} className="p-3 bg-rose-500 text-white rounded-full hover:scale-110 transition-transform shadow-xl shadow-rose-500/40">
                                                     <X className="w-5 h-5" />
                                                 </button>
                                             </div>
@@ -178,7 +214,7 @@ const Writing = ({ onBack, onFinish, initialData, onUpdate }: {
                                                     const file = e.target.files?.[0];
                                                     if (file) {
                                                         const reader = new FileReader();
-                                                        reader.onloadend = () => setScreenshot(reader.result as string);
+                                                        reader.onloadend = () => updateActiveData({ screenshot: reader.result as string });
                                                         reader.readAsDataURL(file);
                                                     }
                                                 }} />
@@ -216,7 +252,7 @@ const Writing = ({ onBack, onFinish, initialData, onUpdate }: {
                 <div className="flex-1 bg-white/[0.01] flex flex-col relative overflow-hidden">
                     {/* Sticky Visual Material for Task 1 */}
                     <AnimatePresence>
-                        {screenshot && (
+                        {activeData.screenshot && (
                             <motion.div
                                 initial={{ height: 0, opacity: 0 }}
                                 animate={{ height: 'auto', opacity: 1 }}
@@ -225,14 +261,14 @@ const Writing = ({ onBack, onFinish, initialData, onUpdate }: {
                             >
                                 <div className="relative group/img rounded-2xl overflow-hidden border border-white/10 max-h-[300px] shadow-2xl">
                                     <img
-                                        src={screenshot}
+                                        src={activeData.screenshot}
                                         className="w-full object-contain bg-zinc-900"
                                         alt="Diagram"
                                         style={{ maxHeight: '280px' }}
                                     />
                                     <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover/img:opacity-100 transition-opacity">
                                         <button
-                                            onClick={() => setScreenshot('')}
+                                            onClick={() => updateActiveData({ screenshot: '' })}
                                             className="p-2 bg-rose-500/80 hover:bg-rose-500 text-white rounded-lg backdrop-blur-md transition-all"
                                         >
                                             <X className="w-4 h-4" />
@@ -249,23 +285,23 @@ const Writing = ({ onBack, onFinish, initialData, onUpdate }: {
                     <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col">
                         <div className="px-12 pt-12 pb-4">
                             <input
-                                value={premise}
-                                onChange={(e) => setPremise(e.target.value)}
+                                value={activeData.premise}
+                                onChange={(e) => updateActiveData({ premise: e.target.value })}
                                 placeholder="ESSAY PREMISE / TITLE..."
                                 className="w-full bg-transparent text-2xl font-black text-white italic placeholder:text-zinc-800 outline-none uppercase tracking-tighter"
                             />
                             <div className="h-px w-full bg-white/5 mt-4" />
                         </div>
                         <textarea
-                            value={text}
-                            onChange={(e) => setText(e.target.value)}
+                            value={activeData.text}
+                            onChange={(e) => updateActiveData({ text: e.target.value })}
                             onPaste={(e) => {
                                 const item = e.clipboardData.items[0];
                                 if (item?.type.startsWith('image/')) {
                                     const blob = item.getAsFile();
                                     if (blob) {
                                         const reader = new FileReader();
-                                        reader.onloadend = () => setScreenshot(reader.result as string);
+                                        reader.onloadend = () => updateActiveData({ screenshot: reader.result as string });
                                         reader.readAsDataURL(blob);
                                     }
                                 }

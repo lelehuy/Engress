@@ -215,8 +215,8 @@ const Dashboard = ({ onNavigate, activeSession, testDateProps, daysLeftProps }: 
                                 {activeSession.category
                                     ? `Continue ${activeSession.category} session`
                                     : todayMinutes < DAILY_GOAL
-                                        ? `Start Today's training`
-                                        : `Resume Mastery Flow`}
+                                        ? `Start ${currentDayPlan.focus}`
+                                        : `Resume ${activeSession.category || 'Mastery'} Flow`}
                                 <ArrowRight className={`w-4 h-4 transition-transform group-hover/btn:translate-x-1`} />
                             </button>
                         </div>
@@ -306,31 +306,78 @@ const Dashboard = ({ onNavigate, activeSession, testDateProps, daysLeftProps }: 
                 </motion.div>
 
                 {/* Daily Pulse Footers */}
+                {/* Execution Pulse - Redesigned */}
                 <div
                     onClick={() => setShowStreakDetail(true)}
-                    className="col-span-12 glass rounded-[2rem] sm:rounded-[2.5rem] px-6 sm:px-10 flex flex-col sm:flex-row items-center justify-between border-dashed bg-transparent border-white/5 mt-4 py-6 sm:py-0 sm:h-24 gap-4 sm:gap-0 cursor-pointer hover:bg-white/5 transition-all group"
+                    className="col-span-12 glass rounded-[2rem] sm:rounded-[2.5rem] px-6 sm:px-10 flex flex-col sm:flex-row items-center justify-between border border-indigo-500/10 bg-indigo-500/[0.02] mt-4 py-8 sm:py-0 sm:h-32 gap-6 sm:gap-10 cursor-pointer hover:bg-indigo-500/5 hover:border-indigo-500/30 transition-all group relative overflow-hidden"
                 >
-                    <div className="flex items-center gap-6 sm:gap-10">
-                        <div className="flex items-center gap-4 text-xs font-bold text-zinc-500 uppercase tracking-widest">
-                            <Zap className="w-4 h-4 text-amber-500" />
-                            <span className="hidden sm:inline">Execution Pulse</span>
+                    {/* Background Accent */}
+                    <div className="absolute top-1/2 -left-20 -translate-y-1/2 w-80 h-40 bg-indigo-500/5 blur-[100px] pointer-events-none rounded-full" />
+
+                    <div className="flex flex-col sm:flex-row items-center gap-6 sm:gap-12 relative z-10 w-full sm:w-auto">
+                        <div className="flex flex-col gap-1 items-center sm:items-start shrink-0">
+                            <div className="flex items-center gap-2 text-[10px] font-black text-indigo-400 uppercase tracking-widest">
+                                <Zap className="w-3 h-3 animate-pulse" />
+                                <span>Execution Pulse</span>
+                            </div>
+                            <div className="flex items-baseline gap-1">
+                                <span className="text-2xl font-black text-white italic">WEEKLY</span>
+                                <span className="text-xs font-bold text-zinc-600 uppercase">Volume</span>
+                            </div>
                         </div>
-                        <div className="flex items-end gap-1.5 h-8">
-                            {weeklyPulse.map((val, i) => (
-                                <motion.div
-                                    key={i}
-                                    initial={{ height: 0 }}
-                                    animate={{ height: `${Math.max(10, Math.min((val / 120) * 100, 100))}%` }}
-                                    className={`w-1.5 sm:w-2 rounded-full ${i === 6 ? 'bg-indigo-500' : 'bg-zinc-800'}`}
-                                />
-                            ))}
+
+                        <div className="flex items-end gap-2 h-12">
+                            {weeklyPulse.map((val, i) => {
+                                const height = Math.max(10, Math.min((val / 150) * 100, 100));
+                                const isToday = i === 6;
+                                return (
+                                    <div key={i} className="flex flex-col items-center gap-2 group/bar">
+                                        <div className="relative w-3 sm:w-4 bg-zinc-900 rounded-t-lg overflow-hidden h-full min-h-[48px] border border-white/5">
+                                            <motion.div
+                                                initial={{ height: 0 }}
+                                                animate={{ height: `${height}%` }}
+                                                className={`absolute bottom-0 left-0 right-0 rounded-t-lg transition-all ${isToday
+                                                        ? 'bg-gradient-to-t from-indigo-700 to-indigo-400 shadow-[0_0_10px_rgba(99,102,241,0.4)]'
+                                                        : 'bg-gradient-to-t from-zinc-800 to-zinc-700 group-hover/bar:from-indigo-900/40 group-hover/bar:to-indigo-500/40'
+                                                    }`}
+                                            />
+                                        </div>
+                                        <span className={`text-[8px] font-black ${isToday ? 'text-indigo-400' : 'text-zinc-700 group-hover/bar:text-zinc-500'}`}>
+                                            {['S', 'M', 'T', 'W', 'T', 'F', 'S'][(new Date().getDay() - (6 - i) + 7) % 7]}
+                                        </span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        <div className="hidden xl:flex flex-col gap-1 border-l border-white/5 pl-12">
+                            <span className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em]">Efficiency</span>
+                            <div className="flex items-center gap-4">
+                                <div className="flex flex-col">
+                                    <span className="text-xl font-black text-white tabular-nums">
+                                        {Math.round(weeklyPulse.reduce((a, b) => a + b, 0) / 7)}
+                                    </span>
+                                    <span className="text-[8px] font-bold text-zinc-500 uppercase">Avg Min/Day</span>
+                                </div>
+                                <div className="w-px h-8 bg-white/5" />
+                                <div className="flex flex-col">
+                                    <span className="text-xl font-black text-indigo-400 tabular-nums">
+                                        {Math.round((weeklyPulse.reduce((a, b) => a + b, 0) / (DAILY_GOAL * 7)) * 100)}%
+                                    </span>
+                                    <span className="text-[8px] font-bold text-zinc-500 uppercase">Consistency</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
+
                     <button
-                        onClick={() => onNavigate('schedule')}
-                        className="text-[10px] font-black uppercase tracking-widest text-indigo-400 hover:text-white transition-colors flex items-center gap-2 group whitespace-nowrap"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onNavigate('schedule');
+                        }}
+                        className="text-[10px] font-black uppercase tracking-[0.2em] bg-white/5 hover:bg-white/10 border border-white/5 px-6 py-4 rounded-2xl text-indigo-400 hover:text-white transition-all flex items-center gap-3 active:scale-95 group relative z-10"
                     >
-                        View Detailed Roadmap <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                        View Detailed Roadmap <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                     </button>
                 </div>
 

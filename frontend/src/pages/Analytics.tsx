@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { BarChart3, TrendingUp, Calendar, ChevronRight, Target, Brain, ShieldCheck, List, ChevronLeft, Flame, ArrowRight } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import { GetAppState, ExportData } from "../../wailsjs/go/main/App";
+import { getCategoryColorClass } from '../utils/categoryColors';
 
 const Analytics = ({ onNavigate }: { onNavigate: (page: string, params?: string, query?: string) => void }) => {
     const [testDate, setTestDate] = useState<Date | null>(null);
@@ -11,6 +12,9 @@ const Analytics = ({ onNavigate }: { onNavigate: (page: string, params?: string,
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const [weeklyPulse, setWeeklyPulse] = useState<number[]>(new Array(7).fill(0));
     const [showStreakDetail, setShowStreakDetail] = useState(false);
+    const [showScoreDetail, setShowScoreDetail] = useState(false);
+    const [showPhaseDetail, setShowPhaseDetail] = useState(false);
+    const [showTrainingDetail, setShowTrainingDetail] = useState(false);
     const [streak, setStreak] = useState(0);
 
     useEffect(() => {
@@ -97,14 +101,62 @@ const Analytics = ({ onNavigate }: { onNavigate: (page: string, params?: string,
 
     // Daily Mastery Strategy Logic
     const getMasteryStrategy = (daysOut: number) => {
-        if (daysOut <= 0) return { phase: "Exam Day", goal: "Peak Performance", details: "Trust your preparation. Stay calm and focused." };
-        if (daysOut > 60) return { phase: "Foundation", goal: "Grammar & Basic Lexicon", details: "Focus on building range and accuracy in complex sentences." };
-        if (daysOut > 30) return { phase: "Development", goal: "Speed & Structure", details: "Practice under strict time limits. Focus on Task 2 planning." };
-        if (daysOut > 14) return { phase: "Mastery", goal: "Nuance & Academic Tone", details: "Eliminate repetitive words. Use rare idioms correctly in Speaking." };
-        return { phase: "Mock Phase", goal: "Exam Simulation", details: "Do 1 full mock daily. Review 100% of errors in Reading/Listening." };
+        if (daysOut <= 0) return {
+            phase: "Exam Day",
+            goal: "Peak Performance",
+            details: "Trust your preparation. Stay calm and focused.",
+            description: "A day of calm. Trust in the preparation you have done. Focus on mental clarity and physical readiness."
+        };
+        if (daysOut > 60) return {
+            phase: "Foundation",
+            goal: "Grammar & Basic Lexicon",
+            details: "Focus on building range and accuracy in complex sentences.",
+            description: "The stage of building strong linguistic roots. Focus on grammar accuracy and basic vocabulary before chasing speed."
+        };
+        if (daysOut > 30) return {
+            phase: "Development",
+            goal: "Speed & Structure",
+            details: "Practice under strict time limits. Focus on Task 2 planning.",
+            description: "The transition stage to execution. Focus on consistent answer structures and begin practicing under strict time pressure."
+        };
+        if (daysOut > 14) return {
+            phase: "Mastery",
+            goal: "Nuance & Academic Tone",
+            details: "Eliminate repetitive words. Use rare idioms correctly in Speaking.",
+            description: "The stage of perfecting details. Replacing common words with academic alternatives and mastering the correct formal tone."
+        };
+        return {
+            phase: "Mock Phase",
+            goal: "Exam Simulation",
+            details: "Do 1 full mock daily. Review 100% of errors in Reading/Listening.",
+            description: "The stage of true battle simulation. Perform full mock tests daily to build stamina and eliminate tactical errors."
+        };
     };
 
     const strategy = getMasteryStrategy(daysLeft);
+
+    const roundToIELTS = (score: number) => {
+        const fraction = score - Math.floor(score);
+        if (fraction < 0.25) return Math.floor(score);
+        if (fraction < 0.75) return Math.floor(score) + 0.5;
+        return Math.ceil(score);
+    };
+
+    const getSessionColor = (module: string = '') => {
+        return getCategoryColorClass(module, 'bg');
+    };
+
+    const getModuleAverage = (moduleName: string) => {
+        const moduleLogs = sessionLogs.filter(l => (l.module || '').toLowerCase().includes(moduleName.toLowerCase()) && l.score > 0);
+        if (moduleLogs.length === 0) return 0;
+        return moduleLogs.reduce((acc, curr) => acc + curr.score, 0) / moduleLogs.length;
+    };
+
+    const modules = ['Writing', 'Speaking', 'Reading', 'Listening'];
+    const moduleAverages = modules.map(m => ({
+        name: m,
+        avg: getModuleAverage(m)
+    }));
 
     return (
         <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
@@ -116,7 +168,10 @@ const Analytics = ({ onNavigate }: { onNavigate: (page: string, params?: string,
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 {/* Strategic Roadmap - Date Centric */}
                 <div className="col-span-12 lg:col-span-8 space-y-6">
-                    <div className="glass p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] bg-indigo-600/5 border-indigo-500/20 relative overflow-hidden">
+                    <div
+                        onClick={() => setShowPhaseDetail(true)}
+                        className="glass p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] bg-indigo-600/5 border-indigo-500/20 relative overflow-hidden cursor-pointer hover:bg-white/5 transition-all border border-transparent hover:border-indigo-500/30 group"
+                    >
                         <div className="relative z-10 flex flex-col h-full">
                             <div className="flex items-center gap-3 text-indigo-400 font-black tracking-widest text-[10px] uppercase mb-6 sm:mb-10">
                                 <Target className="w-4 h-4" />
@@ -171,11 +226,17 @@ const Analytics = ({ onNavigate }: { onNavigate: (page: string, params?: string,
                             <p className="text-[10px] text-zinc-600 font-bold text-center">LAST 7 DAYS ACTIVITY</p>
                         </div>
 
-                        <div className="glass p-6 sm:p-8 rounded-[2rem] flex flex-col justify-center items-center text-center space-y-4 min-h-[180px]">
-                            <ShieldCheck className="w-8 sm:w-10 h-8 sm:h-10 text-emerald-500" />
+                        <div
+                            onClick={() => setShowTrainingDetail(true)}
+                            className="glass p-6 sm:p-8 rounded-[2rem] flex flex-col justify-center items-center text-center space-y-4 min-h-[180px] cursor-pointer hover:bg-white/5 transition-all border border-transparent hover:border-emerald-500/30 group"
+                        >
+                            <ShieldCheck className="w-8 sm:w-10 h-8 sm:h-10 text-emerald-500 group-hover:scale-110 transition-transform" />
                             <div>
                                 <p className="text-xl sm:text-2xl font-black italic">Engress Active</p>
-                                <p className="text-[10px] sm:text-xs text-zinc-500 font-medium">{Math.ceil(sessionLogs.reduce((acc: number, log: any) => acc + (log.duration || 0), 0) / 60)} hours total training</p>
+                                {sessionLogs.reduce((acc: number, log: any) => acc + (log.duration || 0), 0) < 60
+                                    ? `${sessionLogs.reduce((acc: number, log: any) => acc + (log.duration || 0), 0)} minutes total training`
+                                    : `${(sessionLogs.reduce((acc: number, log: any) => acc + (log.duration || 0), 0) / 60).toFixed(1)} hours total training`
+                                }
                             </div>
                         </div>
                     </div>
@@ -183,7 +244,10 @@ const Analytics = ({ onNavigate }: { onNavigate: (page: string, params?: string,
 
                 {/* Score Prediction Sidecard */}
                 <div className="col-span-12 lg:col-span-4 space-y-6">
-                    <div className="glass p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] h-full flex flex-col justify-between min-h-[300px]">
+                    <div
+                        onClick={() => setShowScoreDetail(true)}
+                        className="glass p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] h-full flex flex-col justify-between min-h-[300px] cursor-pointer hover:bg-white/5 transition-all border border-transparent hover:border-indigo-500/30 group"
+                    >
                         <div className="space-y-6">
                             <div className="flex justify-between items-center">
                                 <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Progress to 7.5</span>
@@ -204,14 +268,14 @@ const Analytics = ({ onNavigate }: { onNavigate: (page: string, params?: string,
                                                 fill="transparent"
                                                 strokeDasharray="251"
                                                 strokeDashoffset={251 * (1 - (sessionLogs.filter(l => l.score > 0).reduce((acc, curr) => acc + curr.score, 0) / sessionLogs.filter(l => l.score > 0).length) / 9)}
-                                                className="text-indigo-500"
+                                                className="text-indigo-500 group-hover:text-indigo-400 transition-colors"
                                             />
                                         ) : null}
                                     </svg>
                                     <div className="absolute inset-0 flex flex-col items-center justify-center">
                                         <span className="text-3xl sm:text-4xl xl:text-5xl font-black italic tracking-tighter text-white">
                                             {sessionLogs.filter(l => l.score > 0).length > 0
-                                                ? (sessionLogs.filter(l => l.score > 0).reduce((acc, curr) => acc + curr.score, 0) / sessionLogs.filter(l => l.score > 0).length).toFixed(1)
+                                                ? roundToIELTS(sessionLogs.filter(l => l.score > 0).reduce((acc, curr) => acc + curr.score, 0) / sessionLogs.filter(l => l.score > 0).length).toFixed(1)
                                                 : "—"
                                             }
                                         </span>
@@ -220,10 +284,10 @@ const Analytics = ({ onNavigate }: { onNavigate: (page: string, params?: string,
                             </div>
 
                             <div className="space-y-2 text-center">
-                                <p className="text-xs font-bold text-zinc-400">Predicted Band Score</p>
+                                <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Predicted Band Score</p>
                                 <p className="text-[11px] text-zinc-500 leading-relaxed italic">
                                     {sessionLogs.filter(l => l.score > 0).length > 0
-                                        ? "Based on your recent performance metrics and calibration logs."
+                                        ? "Click to view detailed component breakdown."
                                         : "Complete your first evaluated session to generate internal band prediction."
                                     }
                                 </p>
@@ -295,11 +359,7 @@ const Analytics = ({ onNavigate }: { onNavigate: (page: string, params?: string,
                                         >
                                             <div className="col-span-4 sm:col-span-3 text-xs sm:text-sm font-mono text-zinc-500">{log.date}</div>
                                             <div className="col-span-5 sm:col-span-4 flex items-center gap-2 sm:gap-3 min-w-0">
-                                                <div className={`shrink-0 w-2 h-2 rounded-full ${log.module?.toLowerCase() === 'writing' ? 'bg-amber-500' :
-                                                    log.module?.toLowerCase() === 'speaking' ? 'bg-rose-500' :
-                                                        log.module?.toLowerCase() === 'reading' ? 'bg-blue-500' :
-                                                            log.module?.toLowerCase() === 'mockup' ? 'bg-indigo-500' : 'bg-zinc-500'
-                                                    }`} />
+                                                <div className={`shrink-0 w-2 h-2 rounded-full ${getCategoryColorClass(log.module, 'bg')}`} />
                                                 <span className="text-xs sm:text-sm font-bold text-zinc-200 uppercase tracking-tight group-hover:text-white transition-colors truncate">
                                                     {log.module || 'General Practice'}
                                                 </span>
@@ -378,9 +438,13 @@ const Analytics = ({ onNavigate }: { onNavigate: (page: string, params?: string,
                                                 {dateObj.day}
                                             </span>
                                             {hasLogs && (
-                                                <div className="mt-1 flex gap-0.5">
-                                                    {dayLogs.slice(0, 3).map((_, idx) => (
-                                                        <div key={idx} className="w-1 h-1 rounded-full bg-indigo-500 animate-pulse" />
+                                                <div className="mt-1 flex flex-wrap justify-center gap-1 px-1">
+                                                    {dayLogs.map((log, idx) => (
+                                                        <div
+                                                            key={idx}
+                                                            className={`w-1.5 h-1.5 rounded-full ${getSessionColor(log.module)} shadow-sm shadow-black/20`}
+                                                            title={log.module}
+                                                        />
                                                     ))}
                                                 </div>
                                             )}
@@ -460,6 +524,220 @@ const Analytics = ({ onNavigate }: { onNavigate: (page: string, params?: string,
                                         Close
                                     </button>
                                 </div>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+            {/* Score Detail Modal */}
+            <AnimatePresence>
+                {showScoreDetail && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setShowScoreDetail(false)}
+                        className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-6"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, y: 20 }}
+                            animate={{ scale: 1, y: 0 }}
+                            exit={{ scale: 0.9, y: 20 }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="glass max-w-lg w-full rounded-[3rem] p-10 border-indigo-500/20 relative overflow-hidden"
+                        >
+                            <div className="relative z-10 space-y-8">
+                                <div className="space-y-2 text-center">
+                                    <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest px-3 py-1 bg-indigo-500/10 border border-indigo-500/20 rounded-full">Band Breakdown</span>
+                                    <h3 className="text-3xl font-black text-white italic uppercase tracking-tighter pt-4">Internal Calibration</h3>
+                                    <p className="text-zinc-500 text-xs italic font-medium">Breakdown per module based on your latest activities.</p>
+                                </div>
+
+                                <div className="space-y-4">
+                                    {moduleAverages.map((m, i) => (
+                                        <div key={i} className="flex items-center justify-between p-4 bg-zinc-950/50 rounded-2xl border border-white/5">
+                                            <div className="flex items-center gap-3">
+                                                <div className={`w-2 h-2 rounded-full ${getCategoryColorClass(m.name, 'bg')}`} />
+                                                <span className="text-xs font-black uppercase tracking-widest text-zinc-300">{m.name}</span>
+                                            </div>
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-32 h-1.5 bg-zinc-900 rounded-full overflow-hidden">
+                                                    <motion.div
+                                                        initial={{ width: 0 }}
+                                                        animate={{ width: `${(m.avg / 9) * 100}%` }}
+                                                        className={`h-full ${getCategoryColorClass(m.name, 'bg')}`}
+                                                    />
+                                                </div>
+                                                <span className="text-sm font-black text-white tabular-nums w-8 text-right">
+                                                    {m.avg > 0 ? m.avg.toFixed(1) : "—"}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className="p-6 bg-indigo-500/5 rounded-3xl border border-indigo-500/10 space-y-2">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Calculated Average</span>
+                                        <span className="text-xl font-black text-white italic">
+                                            {sessionLogs.filter(l => l.score > 0).length > 0
+                                                ? (sessionLogs.filter(l => l.score > 0).reduce((acc, curr) => acc + curr.score, 0) / sessionLogs.filter(l => l.score > 0).length).toFixed(2)
+                                                : "—"
+                                            }
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-indigo-400">
+                                        <span className="text-[10px] font-black uppercase tracking-widest">IELTS Rounded Score</span>
+                                        <span className="text-3xl font-black italic">
+                                            {sessionLogs.filter(l => l.score > 0).length > 0
+                                                ? roundToIELTS(sessionLogs.filter(l => l.score > 0).reduce((acc, curr) => acc + curr.score, 0) / sessionLogs.filter(l => l.score > 0).length).toFixed(1)
+                                                : "—"
+                                            }
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <button
+                                    onClick={() => setShowScoreDetail(false)}
+                                    className="w-full py-4 bg-zinc-900 hover:bg-zinc-800 text-white font-black uppercase tracking-widest text-[10px] rounded-2xl transition-all border border-white/10"
+                                >
+                                    Dismiss Detailed View
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+            {/* Phase Detail Modal */}
+            <AnimatePresence>
+                {showPhaseDetail && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setShowPhaseDetail(false)}
+                        className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-6"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, y: 20 }}
+                            animate={{ scale: 1, y: 0 }}
+                            exit={{ scale: 0.9, y: 20 }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="glass max-w-2xl w-full rounded-[3rem] p-8 sm:p-10 border-indigo-500/20 relative overflow-hidden"
+                        >
+                            <div className="relative z-10 space-y-8">
+                                <div className="space-y-1">
+                                    <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest px-3 py-1 bg-indigo-500/10 border border-indigo-500/20 rounded-full">Strategic Roadmap Logic</span>
+                                    <h3 className="text-3xl font-black text-white italic uppercase tracking-tighter pt-4">Phase: {strategy.phase}</h3>
+                                    <p className="text-zinc-500 text-sm font-medium">Primary Target: {strategy.goal}</p>
+                                </div>
+
+                                <div className="space-y-6">
+                                    <div className="p-6 bg-zinc-950/50 rounded-3xl border border-white/5 space-y-4">
+                                        <div className="flex items-center gap-3 text-indigo-400">
+                                            <Brain className="w-5 h-5" />
+                                            <h4 className="text-xs font-black uppercase tracking-widest">Why this target?</h4>
+                                        </div>
+                                        <p className="text-zinc-300 leading-relaxed italic text-sm">
+                                            "{strategy.description}"
+                                        </p>
+                                        <div className="pt-4 border-t border-white/5">
+                                            <p className="text-xs text-zinc-400 leading-relaxed">
+                                                Engress Sentinel detects <span className="text-white font-bold">{daysLeft} days remaining</span>. We are shifting your study load from <span className="italic">content absorption</span> to <span className="text-indigo-400 font-bold">performance acceleration</span>. Your focus now is polishing {strategy.details.toLowerCase()}.
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest pl-1">Preparation Path (90 Days Roadmap)</p>
+                                        <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                                            {[
+                                                { name: 'Foundation', range: '60+ Days', desc: 'Accuracy & Basics', active: daysLeft > 60 },
+                                                { name: 'Development', range: '30-60 Days', desc: 'Score & Speed', active: daysLeft <= 60 && daysLeft > 30 },
+                                                { name: 'Mastery', range: '14-30 Days', desc: 'Nuance & Tone', active: daysLeft <= 30 && daysLeft > 14 },
+                                                { name: 'Mock Phase', range: '< 14 Days', desc: 'Battle Simulation', active: daysLeft <= 14 }
+                                            ].map((p, i) => (
+                                                <div key={i} className={`p-4 rounded-2xl border flex flex-col gap-1 transition-all ${p.active ? 'bg-indigo-500/20 border-indigo-500/40 scale-105 shadow-xl shadow-indigo-500/5' : 'bg-transparent border-white/5 opacity-30 grayscale'}`}>
+                                                    <span className={`text-[9px] font-black uppercase ${p.active ? 'text-indigo-400' : 'text-zinc-500'}`}>{p.name}</span>
+                                                    <span className="text-[10px] font-bold text-white">{p.desc}</span>
+                                                    <span className="text-[8px] font-medium text-zinc-600">{p.range}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button
+                                    onClick={() => setShowPhaseDetail(false)}
+                                    className="w-full py-4 bg-white text-black font-black uppercase tracking-widest text-[10px] rounded-2xl hover:bg-zinc-200 transition-all flex items-center justify-center gap-2"
+                                >
+                                    I Understand This Strategy <ArrowRight className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Training Detail Modal */}
+            <AnimatePresence>
+                {showTrainingDetail && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setShowTrainingDetail(false)}
+                        className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-6"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, y: 20 }}
+                            animate={{ scale: 1, y: 0 }}
+                            exit={{ scale: 0.9, y: 20 }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="glass max-w-lg w-full rounded-[3rem] p-10 border-emerald-500/20 relative overflow-hidden"
+                        >
+                            <div className="relative z-10 space-y-8">
+                                <div className="flex flex-col items-center text-center space-y-4">
+                                    <div className="w-20 h-20 rounded-3xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
+                                        <ShieldCheck className="w-10 h-10 text-emerald-500" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <h3 className="text-3xl font-black text-white italic uppercase tracking-tighter">Engress Active Status</h3>
+                                        <p className="text-emerald-500 text-xs font-black uppercase tracking-widest">Total Training Accountability</p>
+                                    </div>
+                                </div>
+
+                                <div className="p-6 bg-zinc-950/50 rounded-3xl border border-white/5 space-y-4">
+                                    <div className="flex justify-between items-baseline border-b border-white/5 pb-4">
+                                        <span className="text-zinc-500 text-xs font-medium">Training Accumulation</span>
+                                        <span className="text-2xl font-black text-white italic">{Math.ceil(sessionLogs.reduce((acc: number, log: any) => acc + (log.duration || 0), 0) / 60)} Hours</span>
+                                    </div>
+
+                                    <div className="space-y-4 pt-2">
+                                        <p className="text-sm text-zinc-400 leading-relaxed">
+                                            The <span className="text-white font-bold">Engress Active</span> status indicates that our protection and monitoring system is currently running.
+                                        </p>
+                                        <ul className="space-y-3">
+                                            {[
+                                                "Records total focus time spent in Focus Lab.",
+                                                "Ensures every minute of study counts toward band prediction calibration.",
+                                                "Maintains your accountability in meeting daily targets."
+                                            ].map((text, i) => (
+                                                <li key={i} className="flex gap-3 text-xs text-zinc-500 items-start">
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1 shrink-0" />
+                                                    {text}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                <button
+                                    onClick={() => setShowTrainingDetail(false)}
+                                    className="w-full py-4 bg-zinc-900 hover:bg-zinc-800 text-white font-black uppercase tracking-widest text-[10px] rounded-2xl transition-all border border-white/10"
+                                >
+                                    Close Detail
+                                </button>
                             </div>
                         </motion.div>
                     </motion.div>
