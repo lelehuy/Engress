@@ -32,12 +32,26 @@ function App() {
         startTime: number;
         data: any;
         isActive: boolean;
-    }>({
-        category: null,
-        startTime: 0,
-        data: null,
-        isActive: false
+    }>(() => {
+        const saved = localStorage.getItem('engress_active_session');
+        if (saved) {
+            try {
+                return JSON.parse(saved);
+            } catch (e) {
+                console.error("Failed to parse saved session", e);
+            }
+        }
+        return {
+            category: null,
+            startTime: 0,
+            data: null,
+            isActive: false
+        };
     });
+
+    useEffect(() => {
+        localStorage.setItem('engress_active_session', JSON.stringify(activeSession));
+    }, [activeSession]);
 
     const sessionRef = useRef(activeSession);
     useEffect(() => {
@@ -279,7 +293,7 @@ function App() {
                     </div>
 
                     <div className="flex items-center gap-4">
-                        {activeSession.isActive ? (
+                        {activeSession.isActive && (
                             <div className="flex items-center gap-2 sm:gap-4 animate-in fade-in slide-in-from-right duration-700">
                                 <div className="hidden lg:flex text-[10px] font-bold text-zinc-500 uppercase tracking-widest items-center gap-2">
                                     <div className="w-2 h-2 rounded-full bg-rose-500" />
@@ -292,14 +306,6 @@ function App() {
                                     Finish
                                 </button>
                             </div>
-                        ) : (
-                            <button
-                                onClick={() => setCurrentPage('vault')}
-                                className="glass px-4 sm:px-6 py-2 rounded-xl text-[10px] sm:text-xs font-black text-zinc-400 hover:text-white hover:bg-indigo-500/20 transition-all border border-transparent whitespace-nowrap"
-                            >
-                                <span className="hidden sm:inline">Start New Training</span>
-                                <span className="sm:hidden">Train</span>
-                            </button>
                         )}
                     </div>
                 </header>
@@ -341,7 +347,7 @@ function App() {
                                     initialCategory={vaultCategory}
                                     sessionState={activeSession}
                                     onBack={() => {
-                                        setActiveSession({ category: null, startTime: 0, data: null, isActive: false });
+                                        // Keep activeSession so users can "continue" later
                                         setVaultCategory(null);
                                         setCurrentPage('dashboard');
                                     }}

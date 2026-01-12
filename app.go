@@ -345,7 +345,10 @@ func (a *App) AddVocabulary(word string, def string, sentences string) {
 }
 
 func (a *App) DeleteVocabulary(id string) {
-	state, _ := a.LoadState()
+	state, err := a.LoadState()
+	if err != nil || state == nil {
+		return
+	}
 	var newList []VocabItem
 	for _, item := range state.Vocabulary {
 		if item.ID != id {
@@ -357,7 +360,10 @@ func (a *App) DeleteVocabulary(id string) {
 }
 
 func (a *App) DeleteLog(id string) {
-	state, _ := a.LoadState()
+	state, err := a.LoadState()
+	if err != nil || state == nil {
+		return
+	}
 	var newList []DailyLog
 	for _, log := range state.DailyLogs {
 		if log.ID != id {
@@ -369,7 +375,10 @@ func (a *App) DeleteLog(id string) {
 }
 
 func (a *App) GetAppState() AppState {
-	state, _ := a.LoadState()
+	state, err := a.LoadState()
+	if err != nil || state == nil {
+		return AppState{}
+	}
 	return *state
 }
 

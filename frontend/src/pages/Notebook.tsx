@@ -26,42 +26,55 @@ const Notebook = ({ initialTab = 'sessions', initialSearch = '', initialId = nul
     useEffect(() => {
         setActiveTab(initialTab);
         setSearchQuery(initialSearch);
+    }, [initialTab, initialSearch]);
 
-        if (initialId && sessionLogs.length > 0) {
-            const item = sessionLogs.find(l => l.id === initialId);
+    useEffect(() => {
+        if (initialId && (sessionLogs.length > 0 || vocabList.length > 0)) {
+            // Check logs first
+            let item = sessionLogs.find(l => l.id === initialId);
             if (item) {
                 setSelectedItem(item);
                 setShowDetail(true);
-                // Also set category so the list on the left shows it correctly
-                if (item.module) {
-                    setSelectedCategory(item.module.toLowerCase());
-                }
+                if (item.module) setSelectedCategory(item.module.toLowerCase());
+                return;
+            }
+
+            // Check vocab
+            item = vocabList.find(v => v.id === initialId);
+            if (item) {
+                setSelectedItem({ ...item, type: 'vocab' });
+                setShowDetail(true);
+                setActiveTab('vocabulary');
             }
         }
-    }, [initialTab, initialSearch, initialId, sessionLogs.length]);
+    }, [initialId, sessionLogs.length, vocabList.length]);
 
     const handleDelete = async () => {
         if (!selectedItem) return;
 
-        const confirm = window.confirm("Are you absolutely sure you want to erase this entry? This action is permanent and will affect your analytics.");
-        if (!confirm) return;
+        try {
+            const confirmName = selectedItem.type === 'vocab' ? `the vocabulary word "${selectedItem.word}"` : "this session log";
+            const confirm = window.confirm(`Are you absolutely sure you want to erase ${confirmName}? This action is permanent and will affect your analytics.`);
+            if (!confirm) return;
 
-        if (selectedItem.type === 'vocab') {
-            await DeleteVocabulary(selectedItem.id);
-        } else {
-            // For older logs without ID, we can't delete reliably, 
-            // but new logs will have a unique timestamp ID.
-            if (selectedItem.id) {
-                await DeleteLog(selectedItem.id);
+            if (selectedItem.type === 'vocab' || (!selectedItem.module && selectedItem.word)) {
+                await DeleteVocabulary(selectedItem.id);
             } else {
-                alert("This is an older legacy log without a unique ID and cannot be deleted individually. Only new logs support deletion.");
-                return;
+                if (selectedItem.id) {
+                    await DeleteLog(selectedItem.id);
+                } else {
+                    alert("This is an older legacy log without a unique ID and cannot be deleted individually. Only new logs support deletion.");
+                    return;
+                }
             }
-        }
 
-        setSelectedItem(null);
-        setShowDetail(false);
-        fetchData();
+            setSelectedItem(null);
+            setShowDetail(false);
+            await fetchData();
+        } catch (error) {
+            console.error("Failed to delete entry:", error);
+            alert("System error preventing deletion. Please check logs.");
+        }
     };
 
     const categories = [
@@ -90,9 +103,9 @@ const Notebook = ({ initialTab = 'sessions', initialSearch = '', initialId = nul
     const [showDetail, setShowDetail] = useState(false);
 
     return (
-        <div className="flex flex-col lg:flex-row h-full gap-8 overflow-hidden">
+        <div className="flex flex-col xl:flex-row h-full gap-4 sm:gap-8 overflow-hidden">
             {/* Left: Archive Navigation */}
-            <div className={`w-full lg:w-[450px] flex flex-col gap-4 sm:gap-6 ${showDetail ? 'hidden lg:flex' : 'flex'}`}>
+            <div className={`w-full xl:w-[400px] flex flex-col gap-4 sm:gap-6 ${showDetail ? 'hidden xl:flex' : 'flex'}`}>
                 <div className="space-y-1">
                     <h2 className="text-2xl sm:text-3xl font-black italic tracking-tighter text-white uppercase">Notebook</h2>
                     <p className="text-[10px] sm:text-xs font-bold text-zinc-600 uppercase tracking-widest">All knowledge stored locally.</p>
@@ -189,7 +202,7 @@ const Notebook = ({ initialTab = 'sessions', initialSearch = '', initialId = nul
                                             <button
                                                 key={i}
                                                 onClick={() => { setSelectedItem(log); setShowDetail(true); }}
-                                                className={`w-full glass p-4 sm:p-5 rounded-3xl text-left transition-all border group ${selectedItem === log ? 'bg-white/10 border-indigo-500/30' : 'border-transparent hover:bg-white/5'}`}
+                                                className={`w-full glass p-4 sm:p-5 rounded-3xl text-left transition-all border group ${selectedItem?.id === log.id ? 'bg-white/10 border-indigo-500/30' : 'border-transparent hover:bg-white/5'}`}
                                             >
                                                 <div className="flex justify-between items-start mb-2">
                                                     <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${log.module?.toLowerCase() === 'writing' ? 'bg-amber-500/10 border-amber-500/20 text-amber-500' :
@@ -236,11 +249,11 @@ const Notebook = ({ initialTab = 'sessions', initialSearch = '', initialId = nul
             </div>
 
             {/* Right: Detail View */}
-            <div className={`flex-1 ring-1 ring-white/5 rounded-[2rem] lg:rounded-[3.5rem] bg-zinc-900/10 flex flex-col p-6 sm:p-12 overflow-y-auto custom-scrollbar relative ${showDetail ? 'flex' : 'hidden lg:flex'}`}>
-                {/* Mobile Back Button */}
+            <div className={`flex-1 ring-1 ring-white/5 rounded-[2rem] lg:rounded-[3.5rem] bg-zinc-900/10 flex flex-col p-4 sm:p-8 xl:p-12 overflow-y-auto custom-scrollbar relative ${showDetail ? 'flex' : 'hidden xl:flex'}`}>
+                {/* Mobile/Tablet Back Button */}
                 <button
                     onClick={() => setShowDetail(false)}
-                    className="lg:hidden flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-indigo-400 mb-6 bg-zinc-900 w-fit px-4 py-2 rounded-full border border-white/5"
+                    className="xl:hidden flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-indigo-400 mb-6 bg-zinc-900 w-fit px-4 py-2 rounded-full border border-white/5"
                 >
                     <ChevronLeft className="w-4 h-4" /> Back to Archive
                 </button>
@@ -258,7 +271,7 @@ const Notebook = ({ initialTab = 'sessions', initialSearch = '', initialId = nul
                                         <span className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">Vocabulary Entry</span>
                                         <span className="text-zinc-500 text-xs font-mono">{selectedItem.date_added}</span>
                                     </div>
-                                    <h1 className="text-7xl font-black text-white italic tracking-tighter uppercase">{selectedItem.word}</h1>
+                                    <h1 className="text-4xl sm:text-5xl xl:text-7xl font-black text-white italic tracking-tighter uppercase break-words leading-none">{selectedItem.word}</h1>
                                 </div>
 
                                 <div className="space-y-6">
@@ -319,14 +332,14 @@ const Notebook = ({ initialTab = 'sessions', initialSearch = '', initialId = nul
                                     </h1>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-8">
-                                    <div className="p-6 bg-zinc-900/30 rounded-2xl border border-white/5 space-y-2">
-                                        <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Score / Rating</p>
-                                        <p className="text-3xl font-black text-white">{selectedItem.score}</p>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-8">
+                                    <div className="p-4 sm:p-6 bg-zinc-900/30 rounded-2xl border border-white/5 space-y-2">
+                                        <p className="text-[10px] sm:text-xs font-bold text-zinc-500 uppercase tracking-widest">Score / Rating</p>
+                                        <p className="text-2xl sm:text-3xl font-black text-white">{selectedItem.score}</p>
                                     </div>
-                                    <div className="p-6 bg-zinc-900/30 rounded-2xl border border-white/5 space-y-2">
-                                        <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Duration</p>
-                                        <p className="text-3xl font-black text-white">{selectedItem.duration || 45} min</p>
+                                    <div className="p-4 sm:p-6 bg-zinc-900/30 rounded-2xl border border-white/5 space-y-2">
+                                        <p className="text-[10px] sm:text-xs font-bold text-zinc-500 uppercase tracking-widest">Duration</p>
+                                        <p className="text-2xl sm:text-3xl font-black text-white">{selectedItem.duration || 45} min</p>
                                     </div>
                                 </div>
 
@@ -439,8 +452,8 @@ const Notebook = ({ initialTab = 'sessions', initialSearch = '', initialId = nul
                                     <h3 className="text-sm font-bold text-indigo-400 uppercase tracking-widest flex items-center gap-2">
                                         <Book className="w-4 h-4" /> Work Content / Archive
                                     </h3>
-                                    <div className="bg-zinc-900/80 rounded-3xl p-10 border border-white/10 min-h-[200px] flex items-center justify-center">
-                                        <p className={`text-zinc-300 leading-relaxed whitespace-pre-wrap font-serif ${selectedItem.content ? 'text-lg w-full text-left' : 'text-sm italic opacity-30'}`}>
+                                    <div className="bg-zinc-900/80 rounded-2xl sm:rounded-3xl p-6 sm:p-10 border border-white/10 min-h-[200px] flex items-center justify-center">
+                                        <p className={`text-zinc-300 leading-relaxed whitespace-pre-wrap font-serif break-words ${selectedItem.content ? 'text-base sm:text-lg w-full text-left' : 'text-sm italic opacity-30'}`}>
                                             {selectedItem.module?.toLowerCase() === 'speaking' && selectedItem.content ? (
                                                 (() => {
                                                     try {

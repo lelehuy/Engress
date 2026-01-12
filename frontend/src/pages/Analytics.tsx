@@ -209,7 +209,7 @@ const Analytics = ({ onNavigate }: { onNavigate: (page: string, params?: string,
                                         ) : null}
                                     </svg>
                                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                        <span className="text-4xl sm:text-5xl font-black italic tracking-tighter text-white">
+                                        <span className="text-3xl sm:text-4xl xl:text-5xl font-black italic tracking-tighter text-white">
                                             {sessionLogs.filter(l => l.score > 0).length > 0
                                                 ? (sessionLogs.filter(l => l.score > 0).reduce((acc, curr) => acc + curr.score, 0) / sessionLogs.filter(l => l.score > 0).length).toFixed(1)
                                                 : "—"
@@ -273,11 +273,11 @@ const Analytics = ({ onNavigate }: { onNavigate: (page: string, params?: string,
                             exit={{ opacity: 0, y: -10 }}
                             className="glass rounded-[2.5rem] overflow-hidden border-white/5 bg-white/[0.01]"
                         >
-                            <div className="grid grid-cols-12 px-8 py-4 bg-zinc-900/50 border-b border-white/5">
-                                <div className="col-span-3 text-[10px] font-black text-zinc-600 uppercase tracking-widest">Date</div>
-                                <div className="col-span-4 text-[10px] font-black text-zinc-600 uppercase tracking-widest">Learning Category</div>
-                                <div className="col-span-3 text-[10px] font-black text-zinc-600 uppercase tracking-widest">Intensity</div>
-                                <div className="col-span-2 text-right text-[10px] font-black text-zinc-600 uppercase tracking-widest">Metric</div>
+                            <div className="grid grid-cols-12 px-6 sm:px-8 py-4 bg-zinc-900/50 border-b border-white/5">
+                                <div className="col-span-4 sm:col-span-3 text-[9px] sm:text-[10px] font-black text-zinc-600 uppercase tracking-widest">Date</div>
+                                <div className="col-span-5 sm:col-span-4 text-[9px] sm:text-[10px] font-black text-zinc-600 uppercase tracking-widest">Category</div>
+                                <div className="hidden sm:block sm:col-span-3 text-[10px] font-black text-zinc-600 uppercase tracking-widest">Intensity</div>
+                                <div className="col-span-3 sm:col-span-2 text-right text-[9px] sm:text-[10px] font-black text-zinc-600 uppercase tracking-widest">Metric</div>
                             </div>
 
                             <div className="divide-y divide-white/[0.03]">
@@ -293,25 +293,25 @@ const Analytics = ({ onNavigate }: { onNavigate: (page: string, params?: string,
                                             onClick={() => onNavigate('notebook', 'sessions', log.id)}
                                             className="grid grid-cols-12 px-8 py-6 items-center hover:bg-white/[0.02] transition-colors group cursor-pointer"
                                         >
-                                            <div className="col-span-3 text-sm font-mono text-zinc-500">{log.date}</div>
-                                            <div className="col-span-4 flex items-center gap-3">
-                                                <div className={`w-2 h-2 rounded-full ${log.module?.toLowerCase() === 'writing' ? 'bg-amber-500' :
+                                            <div className="col-span-4 sm:col-span-3 text-xs sm:text-sm font-mono text-zinc-500">{log.date}</div>
+                                            <div className="col-span-5 sm:col-span-4 flex items-center gap-2 sm:gap-3 min-w-0">
+                                                <div className={`shrink-0 w-2 h-2 rounded-full ${log.module?.toLowerCase() === 'writing' ? 'bg-amber-500' :
                                                     log.module?.toLowerCase() === 'speaking' ? 'bg-rose-500' :
                                                         log.module?.toLowerCase() === 'reading' ? 'bg-blue-500' :
                                                             log.module?.toLowerCase() === 'mockup' ? 'bg-indigo-500' : 'bg-zinc-500'
                                                     }`} />
-                                                <span className="text-sm font-bold text-zinc-200 uppercase tracking-tight group-hover:text-white transition-colors">
+                                                <span className="text-xs sm:text-sm font-bold text-zinc-200 uppercase tracking-tight group-hover:text-white transition-colors truncate">
                                                     {log.module || 'General Practice'}
                                                 </span>
                                             </div>
-                                            <div className="col-span-3">
+                                            <div className="hidden sm:block sm:col-span-3">
                                                 <span className="px-3 py-1 rounded-full bg-zinc-900 border border-white/5 text-zinc-400 text-[10px] font-bold uppercase tracking-wider">
-                                                    {log.duration} Minutes
+                                                    {log.duration} min
                                                 </span>
                                             </div>
-                                            <div className="col-span-2 text-right">
-                                                <span className="text-base font-black italic text-zinc-400 group-hover:text-indigo-400 transition-colors">
-                                                    {log.score > 0 ? `Band ${log.score}` : '—'}
+                                            <div className="col-span-3 sm:col-span-2 text-right">
+                                                <span className="text-sm sm:text-base font-black italic text-zinc-400 group-hover:text-indigo-400 transition-colors">
+                                                    {log.score > 0 ? `B${log.score}` : '—'}
                                                 </span>
                                             </div>
                                         </motion.div>
