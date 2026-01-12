@@ -492,7 +492,7 @@ func (a *App) CheckForUpdates() {
 		return
 	}
 
-	currentVersion := "v0.0.1" // Current version
+	currentVersion := "v0.0.2" // Current version
 	if release.TagName != "" && release.TagName != currentVersion {
 		result, _ := runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{
 			Type:          runtime.QuestionDialog,
