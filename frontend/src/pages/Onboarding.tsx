@@ -77,8 +77,8 @@ const Onboarding = ({ onComplete }: OnboardingProps) => {
                                     type="text"
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
-                                    placeholder="COMMANDER NAME"
-                                    className="w-full bg-zinc-900/50 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white font-black outline-none focus:border-indigo-500/50 transition-all text-center uppercase tracking-widest text-lg placeholder:text-zinc-800"
+                                    placeholder="YOUR NAME"
+                                    className="w-full bg-zinc-900/50 border border-white/10 rounded-2xl py-4 px-12 text-white font-black outline-none focus:border-indigo-500/50 transition-all text-center uppercase tracking-widest text-lg placeholder:text-zinc-800"
                                 />
                             </div>
                             <button
@@ -129,7 +129,7 @@ const Onboarding = ({ onComplete }: OnboardingProps) => {
                         >
                             <div className="p-8 bg-zinc-900/50 border border-emerald-500/20 rounded-[2.5rem] space-y-4">
                                 <div className="space-y-1 text-center">
-                                    <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Protocol Activated</p>
+                                    <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Setup Complete</p>
                                     <h1 className="text-3xl font-black text-white tracking-widest truncate uppercase italic">{name}</h1>
                                 </div>
                                 <div className="h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden">

@@ -170,11 +170,17 @@ function App() {
     if (isLoading) return <div className="h-screen w-full bg-zinc-950 flex items-center justify-center text-zinc-500 uppercase tracking-widest font-black italic">Initializing Engress Protocol...</div>;
 
     if (currentPage === 'onboarding') {
-        return <Onboarding onComplete={() => setCurrentPage('briefing')} />;
+        return <Onboarding onComplete={() => {
+            refreshAppState();
+            setCurrentPage('briefing');
+        }} />;
     }
 
     if (currentPage === 'briefing') {
-        return <Briefing onComplete={() => setCurrentPage('dashboard')} />;
+        return <Briefing onComplete={() => {
+            refreshAppState();
+            setCurrentPage('dashboard');
+        }} />;
     }
 
     return (
@@ -312,6 +318,8 @@ function App() {
                             {currentPage === 'dashboard' && (
                                 <Dashboard
                                     activeSession={activeSession}
+                                    testDateProps={testDate}
+                                    daysLeftProps={daysLeft}
                                     onNavigate={(page: string, params?: string, query?: string) => {
                                         setCurrentPage(page);
                                         if (page === 'vault' && params) setVaultCategory(params);
@@ -394,7 +402,7 @@ function App() {
                                 />
                             )}
                             {currentPage === 'notebook' && <Notebook initialTab={notebookTab} initialSearch={notebookSearch} initialId={notebookItemId} />}
-                            {currentPage === 'settings' && <Settings />}
+                            {currentPage === 'settings' && <Settings onRefresh={refreshAppState} />}
                             {currentPage !== 'dashboard' && currentPage !== 'vault' && currentPage !== 'analytics' && currentPage !== 'schedule' && currentPage !== 'notebook' && currentPage !== 'settings' && (
                                 <div className="flex flex-col items-center justify-center h-full text-zinc-600">
                                     <Layout className="w-12 h-12 mb-4 opacity-20" />

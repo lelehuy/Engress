@@ -6,7 +6,7 @@ import { WindowReload } from "../../wailsjs/runtime/runtime";
 import logoUniversal from '../assets/images/logo-universal.png';
 import appIcon from '../assets/images/appicon.png';
 
-const Settings = () => {
+const Settings = ({ onRefresh }: { onRefresh?: () => void }) => {
     const [name, setName] = useState('');
     const [testDate, setTestDate] = useState('2026-03-01');
     const [isSaving, setIsSaving] = useState(false);
@@ -41,6 +41,7 @@ const Settings = () => {
         await UpdateProfileName(name);
         await UpdateTestDate(testDate);
         await UpdateReminders(reminderEnabled, reminderTime);
+        if (onRefresh) onRefresh();
         setTimeout(() => setIsSaving(false), 500);
     };
 

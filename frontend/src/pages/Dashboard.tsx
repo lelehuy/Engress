@@ -4,13 +4,15 @@ import { useState, useEffect } from 'react';
 import { preparationTips } from '../data/prepTips';
 import { GetAppState, GetEngressBriefing as GetSentinelBriefing, GetConsistencyPhase, SetSessionCategory } from "../../wailsjs/go/main/App";
 
-const Dashboard = ({ onNavigate, activeSession }: {
+const Dashboard = ({ onNavigate, activeSession, testDateProps, daysLeftProps }: {
     onNavigate: (page: string, params?: string, query?: string) => void,
-    activeSession: { category: string | null; isActive: boolean; }
+    activeSession: { category: string | null; isActive: boolean; },
+    testDateProps: string | null,
+    daysLeftProps: number
 }) => {
     const [missionAccepted, setMissionAccepted] = useState(false);
-    const [testDate, setTestDate] = useState<Date | null>(null);
-    const [daysLeft, setDaysLeft] = useState(0);
+    const [testDate, setTestDate] = useState<Date | null>(testDateProps ? new Date(testDateProps) : null);
+    const [daysLeft, setDaysLeft] = useState(daysLeftProps);
     const [todayMinutes, setTodayMinutes] = useState(0);
     const [tomorrowFocus, setTomorrowFocus] = useState('Determine during ritual');
     const [lastScore, setLastScore] = useState<number | null>(null);
@@ -25,16 +27,12 @@ const Dashboard = ({ onNavigate, activeSession }: {
     const [showStreakDetail, setShowStreakDetail] = useState(false);
 
     useEffect(() => {
+        if (testDateProps) {
+            setTestDate(new Date(testDateProps));
+            setDaysLeft(daysLeftProps);
+        }
+
         GetAppState().then(state => {
-            if (state.user_profile.name) {
-                setUserName(state.user_profile.name);
-            }
-            if (state.user_profile.test_date) {
-                const date = new Date(state.user_profile.test_date);
-                setTestDate(date);
-                const diff = date.getTime() - new Date().getTime();
-                setDaysLeft(Math.max(0, Math.ceil(diff / (1000 * 3600 * 24))));
-            }
 
             setVocabCount(state.vocabulary?.length || 0);
 
@@ -122,14 +120,13 @@ const Dashboard = ({ onNavigate, activeSession }: {
                 <div className="space-y-1">
                     <div className="flex items-center gap-3 mb-1">
                         <div className="px-2 py-0.5 bg-indigo-500/10 border border-indigo-500/20 rounded text-[9px] font-black text-indigo-400 uppercase tracking-widest">System Online</div>
-                        <div className="px-2 py-0.5 bg-white/5 border border-white/10 rounded text-[9px] font-black text-zinc-500 uppercase tracking-widest">{daysLeft} Days to Deadline</div>
                     </div>
                     <motion.h1
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         className="text-3xl sm:text-5xl font-black tracking-tight text-white uppercase italic leading-none"
                     >
-                        Engress <span className="text-zinc-700 not-italic font-medium">{userName || 'Command'}</span>
+                        Halo, <span className="text-zinc-700 not-italic font-medium">{userName || 'Command'}</span>
                     </motion.h1>
                 </div>
                 <div className="grid grid-cols-2 sm:flex sm:gap-4 w-full sm:w-auto gap-3">
