@@ -389,18 +389,22 @@ function App() {
                                     }}
                                     onUpdateSession={(data: any) => {
                                         setActiveSession((prev: any) => {
-                                            // 1. If we are explicitly clearing the session, don't allow revival
+                                            // 1. Explicit clear
                                             if (data.category === null) {
                                                 return { category: null, startTime: 0, data: null, isActive: false };
                                             }
 
-                                            // 2. If the current session is empty (finished), don't allow late updates to revive it
-                                            // unless this is a NEW session start (data.category provided and data.isActive is true)
-                                            if (!prev.category && !data.isActive) {
+                                            // 2. Allow if we are starting a new session OR if we are currently in an active session
+                                            // This prevents "revival" because after Finish, prev.category is null, 
+                                            // and if data.isActive is not explicitly true, it won't pass.
+                                            const isStarting = data.isActive === true;
+                                            const isContinuing = prev.category !== null;
+
+                                            if (!isStarting && !isContinuing) {
                                                 return prev;
                                             }
 
-                                            // 3. Auto-collapse sidebar when a session becomes active
+                                            // 3. Auto-collapse sidebar
                                             if (data.isActive && !prev.isActive) {
                                                 setSidebarCollapsed(true);
                                             }
@@ -409,7 +413,7 @@ function App() {
                                                 ...prev,
                                                 category: data.category || prev.category || vaultCategory,
                                                 data: { ...prev.data, ...data },
-                                                isActive: data.isActive !== undefined ? data.isActive : prev.isActive
+                                                isActive: data.isActive !== undefined ? data.isActive : (prev.category ? prev.isActive : true)
                                             };
                                         });
                                     }}
