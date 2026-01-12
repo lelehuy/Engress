@@ -261,11 +261,65 @@ const Settings = () => {
                             >
                                 {testSent ? 'System Alert Sent' : 'Test Notifications'}
                             </button>
+
+                            <div className="pt-4 border-t border-white/5">
+                                <button
+                                    onClick={() => setShowResetConfirm(true)}
+                                    className="w-full py-3 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 active:scale-95"
+                                >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                    Reset App Data
+                                </button>
+                                <p className="text-[8px] text-zinc-600 text-center mt-2 font-bold uppercase tracking-widest">DANGER: THIS CLEARS ALL LOCAL DATA</p>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div >
+
+            {/* Reset Confirmation Modal */}
+            <AnimatePresence>
+                {showResetConfirm && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-6"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, y: 20 }}
+                            animate={{ scale: 1, y: 0 }}
+                            exit={{ scale: 0.9, y: 20 }}
+                            className="glass max-w-sm w-full rounded-[2rem] p-8 border-red-500/20 space-y-6 text-center"
+                        >
+                            <div className="w-16 h-16 bg-red-500/10 rounded-2xl flex items-center justify-center mx-auto">
+                                <AlertTriangle className="w-8 h-8 text-red-500" />
+                            </div>
+                            <div className="space-y-2">
+                                <h3 className="text-xl font-black text-white uppercase italic">Nuclear Reset?</h3>
+                                <p className="text-zinc-400 text-xs font-medium leading-relaxed">
+                                    This will permanently delete all your study logs, vocabulary, and settings. This action cannot be undone.
+                                </p>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                                <button
+                                    onClick={() => setShowResetConfirm(false)}
+                                    className="py-3 bg-zinc-900 text-zinc-400 font-black uppercase tracking-widest text-[10px] rounded-xl hover:bg-zinc-800 transition-all"
+                                >
+                                    Abort
+                                </button>
+                                <button
+                                    onClick={handleResetApp}
+                                    className="py-3 bg-red-600 text-white font-black uppercase tracking-widest text-[10px] rounded-xl hover:bg-red-500 shadow-lg shadow-red-600/20 transition-all"
+                                >
+                                    Confirm
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
     );
 };
 

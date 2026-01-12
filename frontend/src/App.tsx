@@ -9,6 +9,7 @@ import Settings from './pages/Settings';
 import Notebook from './pages/Notebook';
 import Onboarding from './pages/Onboarding';
 import Summary from './pages/Summary';
+import Briefing from './pages/Briefing';
 import { EventsOn } from "../wailsjs/runtime/runtime";
 import { LogSession, GetAppState, SetPauseState, SetSessionCategory } from "../wailsjs/go/main/App";
 import { useRef } from 'react';
@@ -169,7 +170,11 @@ function App() {
     if (isLoading) return <div className="h-screen w-full bg-zinc-950 flex items-center justify-center text-zinc-500 uppercase tracking-widest font-black italic">Initializing Engress Protocol...</div>;
 
     if (currentPage === 'onboarding') {
-        return <Onboarding onComplete={() => setCurrentPage('dashboard')} />;
+        return <Onboarding onComplete={() => setCurrentPage('briefing')} />;
+    }
+
+    if (currentPage === 'briefing') {
+        return <Briefing onComplete={() => setCurrentPage('dashboard')} />;
     }
 
     return (

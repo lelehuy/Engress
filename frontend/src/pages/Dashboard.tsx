@@ -265,28 +265,26 @@ const Dashboard = ({ onNavigate, activeSession }: {
                     </div>
 
                     <div className="relative flex items-center justify-center">
-                        <svg className="w-32 h-32 sm:w-40 sm:h-40 transform -rotate-90">
+                        <svg className="w-32 h-32 sm:w-40 sm:h-40 transform -rotate-90" viewBox="0 0 100 100">
                             {/* Background Track */}
                             <circle
-                                cx="50%"
-                                cy="50%"
-                                r="45%"
-                                pathLength="100"
+                                cx="50"
+                                cy="50"
+                                r="40"
                                 className="stroke-zinc-900"
                                 strokeWidth="8"
                                 fill="transparent"
                             />
                             {/* Progress Fill */}
                             <motion.circle
-                                cx="50%"
-                                cy="50%"
-                                r="45%"
-                                pathLength="100"
+                                cx="50"
+                                cy="50"
+                                r="40"
                                 fill="transparent"
                                 strokeWidth="8"
-                                strokeDasharray="100 100"
-                                initial={{ strokeDashoffset: 100 }}
-                                animate={{ strokeDashoffset: 100 - Math.min((todayMinutes / DAILY_GOAL) * 100, 100) }}
+                                strokeDasharray="251.2"
+                                initial={{ strokeDashoffset: 251.2 }}
+                                animate={{ strokeDashoffset: 251.2 - (Math.min((todayMinutes / DAILY_GOAL), 1) * 251.2) }}
                                 transition={{ duration: 1.5, ease: "easeOut" }}
                                 strokeLinecap="round"
                                 className={todayMinutes < DAILY_GOAL ? 'stroke-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.3)]' : 'stroke-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.5)]'}
