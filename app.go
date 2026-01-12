@@ -574,3 +574,20 @@ func (a *App) Quit() {
 func (a *App) shutdown(ctx context.Context) {
 	exec.Command("pkill", "engress_hud").Run()
 }
+
+// ResetAppData wipes the user's local data
+func (a *App) ResetAppData() string {
+	path := a.getStoragePath()
+	err := os.Remove(path)
+	if err != nil && !os.IsNotExist(err) {
+		return "Failed to delete data: " + err.Error()
+	}
+	return "Success"
+}
+
+// CompleteTutorial marks the tutorial as seen
+func (a *App) CompleteTutorial() {
+	state, _ := a.LoadState()
+	state.UserProfile.TutorialSeen = true
+	a.SaveState(state)
+}

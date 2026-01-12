@@ -8,6 +8,7 @@ type UserProfile struct {
 	IsSetupComplete bool    `json:"is_setup_complete"` // New flag
 	ReminderTime    string  `json:"reminder_time"`     // "10:00"
 	ReminderEnabled bool    `json:"reminder_enabled"`
+	TutorialSeen    bool    `json:"tutorial_seen"`
 }
 
 type Scores struct {

@@ -10,6 +10,8 @@ export function CheckUpdate():Promise<main.UpdateInfo>;
 
 export function CompleteSetup(arg1:string,arg2:string):Promise<void>;
 
+export function CompleteTutorial():Promise<void>;
+
 export function DeleteLog(arg1:string):Promise<void>;
 
 export function DeleteVocabulary(arg1:string):Promise<void>;
@@ -37,6 +39,8 @@ export function LogSession(arg1:string,arg2:string,arg3:number,arg4:string,arg5:
 export function Notify(arg1:string,arg2:string):Promise<void>;
 
 export function Quit():Promise<void>;
+
+export function ResetAppData():Promise<string>;
 
 export function SaveState(arg1:main.AppState):Promise<void>;
 

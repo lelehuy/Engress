@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Settings as SettingsIcon, Calendar, Save, Zap, Bell, Lock, Clock, Shield, User } from 'lucide-react';
-import { GetAppState, UpdateTestDate, UpdateReminders, UpdateProfileName, GetAppVersion, CheckUpdate, DownloadUpdate } from "../../wailsjs/go/main/App";
+import { motion, AnimatePresence } from 'framer-motion';
+import { Settings as SettingsIcon, Calendar, Save, Zap, Bell, Lock, Clock, Shield, User, Trash2, AlertTriangle } from 'lucide-react';
+import { GetAppState, UpdateTestDate, UpdateReminders, UpdateProfileName, GetAppVersion, CheckUpdate, DownloadUpdate, ResetAppData } from "../../wailsjs/go/main/App";
+import { WindowReload } from "../../wailsjs/runtime/runtime";
 import logoUniversal from '../assets/images/logo-universal.png';
 import appIcon from '../assets/images/appicon.png';
 
@@ -71,6 +72,7 @@ const Settings = () => {
     };
 
     const [testSent, setTestSent] = useState(false);
+    const [showResetConfirm, setShowResetConfirm] = useState(false);
 
     const handleTestAlert = () => {
         setTestSent(true);
@@ -78,6 +80,15 @@ const Settings = () => {
             Notify("Engress Protocol", "Communication link active. Message received.");
         });
         setTimeout(() => setTestSent(false), 2000);
+    };
+
+    const handleResetApp = async () => {
+        const result = await ResetAppData();
+        if (result === "Success") {
+            WindowReload();
+        } else {
+            alert("Reset failed: " + result);
+        }
     };
 
     return (

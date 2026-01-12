@@ -18,6 +18,10 @@ export function CompleteSetup(arg1, arg2) {
   return window['go']['main']['App']['CompleteSetup'](arg1, arg2);
 }
 
+export function CompleteTutorial() {
+  return window['go']['main']['App']['CompleteTutorial']();
+}
+
 export function DeleteLog(arg1) {
   return window['go']['main']['App']['DeleteLog'](arg1);
 }
@@ -72,6 +76,10 @@ export function Notify(arg1, arg2) {
 
 export function Quit() {
   return window['go']['main']['App']['Quit']();
+}
+
+export function ResetAppData() {
+  return window['go']['main']['App']['ResetAppData']();
 }
 
 export function SaveState(arg1) {

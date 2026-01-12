@@ -60,6 +60,7 @@ export namespace main {
 	    is_setup_complete: boolean;
 	    reminder_time: string;
 	    reminder_enabled: boolean;
+	    tutorial_seen: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new UserProfile(source);
@@ -74,6 +75,7 @@ export namespace main {
 	        this.is_setup_complete = source["is_setup_complete"];
 	        this.reminder_time = source["reminder_time"];
 	        this.reminder_enabled = source["reminder_enabled"];
+	        this.tutorial_seen = source["tutorial_seen"];
 	    }
 	}
 	export class AppState {
