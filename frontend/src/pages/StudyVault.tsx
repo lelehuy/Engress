@@ -130,7 +130,7 @@ const StudyVault = ({ initialCategory, sessionState, onUpdateSession, onTriggerR
                 <p className="text-zinc-500 text-sm sm:text-base font-medium italic">High-performance tools for your self-study preparation.</p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-8">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-8">
                 {categories.map((cat) => (
                     <button
                         key={cat.id}

@@ -10,8 +10,8 @@ export function AddVocabulary(arg1, arg2, arg3) {
   return window['go']['main']['App']['AddVocabulary'](arg1, arg2, arg3);
 }
 
-export function CheckForUpdates() {
-  return window['go']['main']['App']['CheckForUpdates']();
+export function CheckUpdate() {
+  return window['go']['main']['App']['CheckUpdate']();
 }
 
 export function CompleteSetup(arg1, arg2) {
@@ -24,6 +24,10 @@ export function DeleteLog(arg1) {
 
 export function DeleteVocabulary(arg1) {
   return window['go']['main']['App']['DeleteVocabulary'](arg1);
+}
+
+export function DownloadUpdate(arg1, arg2) {
+  return window['go']['main']['App']['DownloadUpdate'](arg1, arg2);
 }
 
 export function ExportData() {

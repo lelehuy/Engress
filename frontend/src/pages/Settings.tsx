@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Settings as SettingsIcon, Calendar, Save, Zap, Bell, Lock, Clock, Shield, User } from 'lucide-react';
-import { GetAppState, UpdateTestDate, UpdateReminders, UpdateProfileName, GetAppVersion } from "../../wailsjs/go/main/App";
+import { GetAppState, UpdateTestDate, UpdateReminders, UpdateProfileName, GetAppVersion, CheckUpdate, DownloadUpdate } from "../../wailsjs/go/main/App";
 import logoUniversal from '../assets/images/logo-universal.png';
+import appIcon from '../assets/images/appicon.png';
 
 const Settings = () => {
     const [name, setName] = useState('');
@@ -11,6 +12,11 @@ const Settings = () => {
     const [reminderEnabled, setReminderEnabled] = useState(true);
     const [reminderTime, setReminderTime] = useState('10:00');
     const [appVersion, setAppVersion] = useState('v0.0.0');
+
+    // Update States
+    const [checkingUpdate, setCheckingUpdate] = useState(false);
+    const [downloading, setDownloading] = useState(false);
+    const [updateStatus, setUpdateStatus] = useState<any>(null); // { available: bool, msg: string, url: string, version: string }
 
     useEffect(() => {
         GetAppState().then(state => {
@@ -35,6 +41,33 @@ const Settings = () => {
         await UpdateTestDate(testDate);
         await UpdateReminders(reminderEnabled, reminderTime);
         setTimeout(() => setIsSaving(false), 500);
+    };
+
+    const handleCheckUpdate = async () => {
+        setCheckingUpdate(true);
+        setUpdateStatus(null);
+        try {
+            const info = await CheckUpdate();
+            setCheckingUpdate(false);
+            if (info.error) {
+                setUpdateStatus({ available: false, msg: info.error });
+            } else if (info.available) {
+                setUpdateStatus({ available: true, msg: `New Version ${info.version} Available`, url: info.download_url, version: info.version });
+            } else {
+                setUpdateStatus({ available: false, msg: "You are on the latest version." });
+            }
+        } catch (e) {
+            setCheckingUpdate(false);
+            setUpdateStatus({ available: false, msg: "Connection Error" });
+        }
+    };
+
+    const handleDownloadUpdate = async () => {
+        if (!updateStatus?.url) return;
+        setDownloading(true);
+        await DownloadUpdate(updateStatus.url, updateStatus.version);
+        setDownloading(false);
+        setUpdateStatus({ available: false, msg: "Installer Launched" });
     };
 
     const [testSent, setTestSent] = useState(false);
@@ -163,7 +196,7 @@ const Settings = () => {
                         </div>
                         <div className="flex flex-col items-center text-center space-y-4 py-4">
                             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center p-3 border border-white/5 shadow-2xl">
-                                <img src={logoUniversal} className="w-full h-full object-contain opacity-80" alt="Engress Logo" />
+                                <img src={appIcon} className="w-full h-full object-contain opacity-80" alt="Engress Logo" />
                             </div>
                             <div>
                                 <h4 className="text-xl font-black text-white italic uppercase tracking-tighter">Engress</h4>
@@ -172,13 +205,44 @@ const Settings = () => {
                         </div>
 
                         <div className="space-y-3 pt-4 border-t border-white/5">
-                            <button
-                                onClick={() => import('../../wailsjs/go/main/App').then(({ CheckForUpdates }) => CheckForUpdates())}
-                                className="w-full py-3 border border-white/5 bg-zinc-900 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500 hover:bg-zinc-800 hover:text-white transition-all flex items-center justify-center gap-3 active:scale-95"
-                            >
-                                <Zap className="w-3.5 h-3.5" />
-                                Check for Updates
-                            </button>
+                            {!updateStatus ? (
+                                <button
+                                    onClick={handleCheckUpdate}
+                                    disabled={checkingUpdate}
+                                    className="w-full py-3 border border-white/5 bg-zinc-900 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500 hover:bg-zinc-800 hover:text-white transition-all flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50 disabled:cursor-wait"
+                                >
+                                    <Zap className={`w-3.5 h-3.5 ${checkingUpdate ? 'animate-pulse text-indigo-400' : ''}`} />
+                                    {checkingUpdate ? 'Scanning Frequency...' : 'Check for Updates'}
+                                </button>
+                            ) : (
+                                <div className={`w-full p-4 rounded-xl border ${updateStatus.available ? 'bg-indigo-500/10 border-indigo-500/20' : 'bg-zinc-900 border-white/5'} flex flex-col items-center gap-3 animate-in fade-in slide-in-from-top-2`}>
+                                    <div className="flex items-center gap-2">
+                                        <div className={`w-2 h-2 rounded-full ${updateStatus.available ? 'bg-indigo-400 animate-pulse' : 'bg-zinc-500'}`} />
+                                        <span className={`text-[10px] font-black uppercase tracking-widest ${updateStatus.available ? 'text-white' : 'text-zinc-500'}`}>
+                                            {updateStatus.msg}
+                                        </span>
+                                    </div>
+
+                                    {updateStatus.available && (
+                                        <button
+                                            onClick={handleDownloadUpdate}
+                                            disabled={downloading}
+                                            className="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-indigo-600/20 active:scale-95 disabled:opacity-50 disabled:cursor-wait"
+                                        >
+                                            {downloading ? 'Downloading Installer...' : 'Download & Install'}
+                                        </button>
+                                    )}
+
+                                    {!updateStatus.available && (
+                                        <button
+                                            onClick={() => setUpdateStatus(null)}
+                                            className="text-[9px] font-bold text-zinc-600 hover:text-zinc-400 uppercase tracking-widest"
+                                        >
+                                            Check Again
+                                        </button>
+                                    )}
+                                </div>
+                            )}
 
                             <button
                                 onClick={handleTestAlert}

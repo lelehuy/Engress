@@ -6,13 +6,15 @@ export function AddCredits(arg1:number):Promise<void>;
 
 export function AddVocabulary(arg1:string,arg2:string,arg3:string):Promise<void>;
 
-export function CheckForUpdates():Promise<void>;
+export function CheckUpdate():Promise<main.UpdateInfo>;
 
 export function CompleteSetup(arg1:string,arg2:string):Promise<void>;
 
 export function DeleteLog(arg1:string):Promise<void>;
 
 export function DeleteVocabulary(arg1:string):Promise<void>;
+
+export function DownloadUpdate(arg1:string,arg2:string):Promise<string>;
 
 export function ExportData():Promise<void>;
 

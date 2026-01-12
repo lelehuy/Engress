@@ -470,22 +470,26 @@ func (a *App) GetAppVersion() string {
 	return "v0.0.2"
 }
 
-// CheckForUpdates checks GitHub releases and downloads the installer if available
-func (a *App) CheckForUpdates() {
+type UpdateInfo struct {
+	Available   bool   `json:"available"`
+	Version     string `json:"version"`
+	Body        string `json:"body"`
+	DownloadUrl string `json:"download_url"`
+	Error       string `json:"error"`
+}
+
+// CheckUpdate checks GitHub releases and returns the update info
+func (a *App) CheckUpdate() UpdateInfo {
 	currentVersion := a.GetAppVersion()
+	info := UpdateInfo{Available: false, Version: currentVersion}
 
 	resp, err := http.Get("https://api.github.com/repos/lelehuy/Engress/releases/latest")
 	if err != nil {
-		runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{
-			Type:    runtime.ErrorDialog,
-			Title:   "Update Check Failed",
-			Message: "Could not connect to update server.",
-		})
-		return
+		info.Error = "Could not connect to update server."
+		return info
 	}
 	defer resp.Body.Close()
 
-	// Struct to parse GitHub JSON including Assets
 	var release struct {
 		TagName string `json:"tag_name"`
 		Body    string `json:"body"`
@@ -496,98 +500,64 @@ func (a *App) CheckForUpdates() {
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(&release); err != nil {
-		runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{
-			Type:    runtime.InfoDialog,
-			Title:   "Engress",
-			Message: "No updates found.",
-		})
-		return
+		info.Error = "Failed to parse update data."
+		return info
 	}
 
 	if release.TagName != "" && release.TagName != currentVersion {
-		// New version found
-		result, _ := runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{
-			Type:          runtime.QuestionDialog,
-			Title:         "Update Available",
-			Message:       fmt.Sprintf("New version %s is available.\n\nChanges:\n%s\n\nDownload and install now?", release.TagName, release.Body),
-			Buttons:       []string{"Download & Install", "Cancel"},
-			DefaultButton: "Download & Install",
-		})
+		// New version available
+		info.Available = true
+		info.Version = release.TagName
+		info.Body = release.Body
 
-		if result == "Download & Install" {
-			// Find the DMG asset
-			var downloadUrl string
-			for _, asset := range release.Assets {
-				if strings.HasSuffix(asset.Name, ".dmg") {
-					downloadUrl = asset.BrowserDownloadUrl
-					break
-				}
+		// Find DMG
+		for _, asset := range release.Assets {
+			if strings.HasSuffix(asset.Name, ".dmg") {
+				info.DownloadUrl = asset.BrowserDownloadUrl
+				break
 			}
-
-			if downloadUrl == "" {
-				runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{
-					Type:    runtime.ErrorDialog,
-					Title:   "Error",
-					Message: "Installer file not found in the release.",
-				})
-				return
-			}
-
-			// Perform Download
-			a.downloadAndInstall(downloadUrl, release.TagName+".dmg")
 		}
-	} else {
-		runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{
-			Type:    runtime.InfoDialog,
-			Title:   "Engress",
-			Message: fmt.Sprintf("You are on the latest version (%s).", currentVersion),
-		})
 	}
+
+	return info
 }
 
-func (a *App) downloadAndInstall(url string, filename string) {
-	// Create temp file
+// DownloadUpdate downloads the installer and opens it
+func (a *App) DownloadUpdate(url string, version string) string {
+	if url == "" {
+		return "Download URL is invalid."
+	}
+
+	filename := fmt.Sprintf("Engress-%s.dmg", version)
 	tmpDir := os.TempDir()
 	filePath := fmt.Sprintf("%s/%s", tmpDir, filename)
 
-	// Create the file
+	// Create file
 	out, err := os.Create(filePath)
 	if err != nil {
-		runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{Type: runtime.ErrorDialog, Title: "Error", Message: "Could not create temporary file."})
-		return
+		return "Could not create temporary file."
 	}
 	defer out.Close()
 
-	// Get the data
+	// Download
 	resp, err := http.Get(url)
 	if err != nil {
-		runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{Type: runtime.ErrorDialog, Title: "Error", Message: "Download failed."})
-		return
+		return "Download failed."
 	}
 	defer resp.Body.Close()
 
-	// Writer the body to file
-	// Note: In a real app, we'd emit progress events here
 	_, err = io.Copy(out, resp.Body)
 	if err != nil {
-		runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{Type: runtime.ErrorDialog, Title: "Error", Message: "Failed to save update file."})
-		return
+		return "Failed to save installer."
 	}
 
-	// Run the installer (Open DMG)
+	// Open DMG
 	cmd := exec.Command("open", filePath)
-	err = cmd.Start()
-	if err != nil {
-		runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{Type: runtime.ErrorDialog, Title: "Error", Message: "Could not open installer."})
-		return
+	if err := cmd.Start(); err != nil {
+		return "Could not launch installer."
 	}
 
-	// Notify user
-	runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{
-		Type:    runtime.InfoDialog,
-		Title:   "Download Complete",
-		Message: "The update has been downloaded. The installer will now open.\n\nPlease drag Engress to your Applications folder to finish updating.",
-	})
+	return "Success"
 }
 
 // ShowWindow shows the application window
