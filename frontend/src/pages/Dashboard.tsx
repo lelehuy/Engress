@@ -132,36 +132,36 @@ const Dashboard = ({ onNavigate, activeSession }: {
                         Engress <span className="text-zinc-700 not-italic font-medium">{userName || 'Command'}</span>
                     </motion.h1>
                 </div>
-                <div className="flex gap-4 w-full sm:w-auto overflow-x-auto pb-2 sm:pb-0">
+                <div className="grid grid-cols-2 sm:flex sm:gap-4 w-full sm:w-auto gap-3">
                     <motion.div
                         whileHover={{ scale: 1.05, y: -2 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => setShowStreakDetail(true)}
-                        className="glass px-4 py-3 rounded-2xl flex items-center gap-3 shrink-0 border-indigo-500/10 cursor-pointer hover:border-orange-500/30 transition-colors"
+                        className="glass px-4 py-3 rounded-2xl flex items-center gap-3 border-indigo-500/10 cursor-pointer hover:border-orange-500/30 transition-colors col-span-1"
                     >
-                        <div className="w-8 h-8 rounded-full bg-orange-500/10 flex items-center justify-center text-orange-500">
+                        <div className="w-8 h-8 rounded-full bg-orange-500/10 flex items-center justify-center text-orange-500 shrink-0">
                             <Flame className="w-4 h-4" />
                         </div>
-                        <div>
-                            <p className="text-[10px] font-black text-zinc-500 uppercase">Streak</p>
-                            <p className="text-sm font-black text-white">{streak} Days</p>
+                        <div className="min-w-0">
+                            <p className="text-[10px] font-black text-zinc-500 uppercase truncate">Streak</p>
+                            <p className="text-sm font-black text-white truncate">{streak} Days</p>
                         </div>
                     </motion.div>
                     <motion.div
                         whileHover={{ scale: 1.05, y: -2 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => onNavigate('notebook', 'vocabulary')}
-                        className="glass px-4 py-3 rounded-2xl flex items-center gap-3 shrink-0 border-indigo-500/10 cursor-pointer hover:border-emerald-500/30 transition-colors"
+                        className="glass px-4 py-3 rounded-2xl flex items-center gap-3 border-indigo-500/10 cursor-pointer hover:border-emerald-500/30 transition-colors col-span-1"
                     >
-                        <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+                        <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 shrink-0">
                             <BookOpen className="w-4 h-4" />
                         </div>
-                        <div>
-                            <p className="text-[10px] font-black text-zinc-500 uppercase">Vocab</p>
-                            <p className="text-sm font-black text-white">{vocabCount}</p>
+                        <div className="min-w-0">
+                            <p className="text-[10px] font-black text-zinc-500 uppercase truncate">Vocab</p>
+                            <p className="text-sm font-black text-white truncate">{vocabCount}</p>
                         </div>
                     </motion.div>
-                    <div className="glass px-4 py-2 sm:px-3 sm:py-2 rounded-2xl flex items-center gap-3 shrink-0 border-indigo-500/10 h-full">
+                    <div className="glass px-4 py-3 rounded-2xl flex items-center justify-center border-indigo-500/10 col-span-2 sm:col-span-1 sm:h-auto">
                         <span className={`px-2 py-1 rounded-lg border text-[10px] font-black uppercase tracking-widest ${consistencyPhase === 'Stable' ? 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400' :
                             consistencyPhase === 'Neglect' ? 'bg-red-500/10 border-red-500/20 text-red-500' :
                                 'bg-amber-500/10 border-amber-500/20 text-amber-500'
