@@ -504,7 +504,18 @@ func (a *App) CheckUpdate() UpdateInfo {
 		return info
 	}
 
-	if release.TagName != "" && release.TagName != currentVersion {
+	// Normalize versions for comparison (remove v, V, and any leading dot after v/V)
+	cleanVersion := func(v string) string {
+		v = strings.TrimPrefix(v, "v")
+		v = strings.TrimPrefix(v, "V")
+		v = strings.TrimPrefix(v, ".")
+		return strings.ToLower(v)
+	}
+
+	normLatest := cleanVersion(release.TagName)
+	normCurrent := cleanVersion(currentVersion)
+
+	if release.TagName != "" && normLatest != normCurrent {
 		// New version available
 		info.Available = true
 		info.Version = release.TagName
