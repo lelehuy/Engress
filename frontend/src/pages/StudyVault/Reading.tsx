@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { BookOpen, Clock, AlertCircle, ChevronLeft, Save, Layout, List, Info, Trophy, ArrowRight, TrendingUp, Calculator, Target, ExternalLink, Share2, X, Mic, PenTool } from 'lucide-react';
 import { motion } from 'framer-motion';
 import SessionTimer from '../../components/SessionTimer';
-import { GetAppState } from "../../../wailsjs/go/main/App";
+import { GetAppState, UpdateNotes, SetHUDScratchpadVisible } from "../../../wailsjs/go/main/App";
+import { EventsOn } from '../../../wailsjs/runtime/runtime';
 
 const Reading = ({ onBack, onFinish, initialData, onUpdate }: {
     onBack: () => void;
@@ -10,6 +11,7 @@ const Reading = ({ onBack, onFinish, initialData, onUpdate }: {
     initialData?: any;
     onUpdate?: (data: any) => void;
 }) => {
+    const categoryName = initialData?.category || 'Reading';
     const [duration, setSeconds] = useState(initialData?.duration || 0);
     const [rawScore, setRawScore] = useState(initialData?.rawScore || 0);
     const [sourceUrl, setSourceUrl] = useState(initialData?.sourceUrl || '');
@@ -40,10 +42,35 @@ const Reading = ({ onBack, onFinish, initialData, onUpdate }: {
 
     useEffect(() => {
         if (onUpdate) onUpdate({ duration, rawScore, sourceUrl, screenshot, examMode, notes });
+        UpdateNotes(notes);
     }, [duration, rawScore, sourceUrl, screenshot, examMode, notes, onUpdate]);
 
+    useEffect(() => {
+        const handleBlur = () => {
+            if (categoryName.toLowerCase() === 'listening') {
+                SetHUDScratchpadVisible(true);
+            }
+        };
+        const handleFocus = () => {
+            SetHUDScratchpadVisible(false);
+        };
+
+        window.addEventListener('blur', handleBlur);
+        window.addEventListener('focus', handleFocus);
+
+        const unlisten = EventsOn("hud-notes-update", (newNotes: string) => {
+            setNotes(newNotes);
+        });
+
+        return () => {
+            window.removeEventListener('blur', handleBlur);
+            window.removeEventListener('focus', handleFocus);
+            unlisten();
+            SetHUDScratchpadVisible(false);
+        };
+    }, [categoryName]);
+
     const calculateBand = (raw: number) => {
-        const categoryName = initialData?.category || 'Reading';
 
         if (categoryName.toLowerCase() === 'listening') {
             if (raw >= 39) return '9.0';
@@ -86,7 +113,6 @@ const Reading = ({ onBack, onFinish, initialData, onUpdate }: {
     };
 
     const currentBand = calculateBand(rawScore);
-    const categoryName = initialData?.category || 'Reading';
 
     return (
         <div className="flex flex-col h-full bg-zinc-950 overflow-hidden">

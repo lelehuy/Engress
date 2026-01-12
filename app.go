@@ -16,10 +16,13 @@ import (
 
 // App struct
 type App struct {
-	ctx             context.Context
-	isPaused        bool
-	pauseCounter    int
-	currentCategory string
+	ctx                    context.Context
+	isPaused               bool
+	pauseCounter           int
+	currentCategory        string
+	currentTimeStr         string
+	isHUDScratchpadVisible bool
+	lastHUDNotes           string
 }
 
 // NewApp creates a new App application struct
@@ -39,6 +42,14 @@ func (a *App) startup(ctx context.Context) {
 		exec.Command("./engress_hud").Run()
 	}()
 	go a.startHUDCommandListener()
+	go a.startHUDNotesWatcher()
+
+	// Wails Window Events for HUD auto-close
+	runtime.EventsOn(ctx, "wails:window-active", func(optionalData ...interface{}) {
+		if a.isHUDScratchpadVisible {
+			a.SetHUDScratchpadVisible(false)
+		}
+	})
 
 	// Daily Alert Logic
 	state, _ := a.LoadState()
@@ -189,6 +200,8 @@ func (a *App) startHUDCommandListener() {
 					runtime.WindowShow(a.ctx)
 				case "OPEN":
 					runtime.WindowShow(a.ctx)
+				case "HIDE_SCRATCHPAD":
+					a.isHUDScratchpadVisible = false
 				}
 			}
 		}
@@ -350,13 +363,23 @@ func (a *App) DeleteVocabulary(id string) {
 		return
 	}
 	var newList []VocabItem
+	deleted := false
 	for _, item := range state.Vocabulary {
 		if item.ID != id {
 			newList = append(newList, item)
+		} else {
+			deleted = true
 		}
 	}
-	state.Vocabulary = newList
-	a.SaveState(state)
+	if deleted {
+		state.Vocabulary = newList
+		a.SaveState(state)
+		runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{
+			Type:    runtime.InfoDialog,
+			Title:   "Deleted",
+			Message: "Vocabulary entry removed successfully.",
+		})
+	}
 }
 
 func (a *App) DeleteLog(id string) {
@@ -365,13 +388,23 @@ func (a *App) DeleteLog(id string) {
 		return
 	}
 	var newList []DailyLog
+	deleted := false
 	for _, log := range state.DailyLogs {
 		if log.ID != id {
 			newList = append(newList, log)
+		} else {
+			deleted = true
 		}
 	}
-	state.DailyLogs = newList
-	a.SaveState(state)
+	if deleted {
+		state.DailyLogs = newList
+		a.SaveState(state)
+		runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{
+			Type:    runtime.InfoDialog,
+			Title:   "Deleted",
+			Message: "Session log erased successfully.",
+		})
+	}
 }
 
 func (a *App) GetAppState() AppState {
@@ -458,6 +491,7 @@ func (a *App) Notify(title string, message string) {
 func (a *App) UpdateTrayTime(timeStr string) {
 	// 1. Update Window Title (Fallback/Internal)
 	timeStr = strings.TrimSpace(timeStr)
+	a.currentTimeStr = timeStr
 	if timeStr == "" {
 		runtime.WindowSetTitle(a.ctx, "Engress")
 	} else {
@@ -465,12 +499,44 @@ func (a *App) UpdateTrayTime(timeStr string) {
 	}
 
 	// 2. Update macOS HUD Helper
-	// If paused or stopped (empty time), we hide the HUD
-	if a.isPaused || timeStr == "" {
+	// Content: Time|Category|ScratchpadVisible
+	scratchVisible := "0"
+	if a.isHUDScratchpadVisible {
+		scratchVisible = "1"
+	}
+
+	upperTime := strings.ToUpper(timeStr)
+	if a.isPaused || timeStr == "" || upperTime == "HIDDEN" || upperTime == "HIDE" {
 		os.WriteFile("/tmp/sentinel_timer.txt", []byte("HIDDEN"), 0644)
 	} else {
-		content := fmt.Sprintf("%s|%s", timeStr, a.currentCategory)
+		content := fmt.Sprintf("%s|%s|%s", timeStr, a.currentCategory, scratchVisible)
 		os.WriteFile("/tmp/sentinel_timer.txt", []byte(content), 0644)
+	}
+}
+
+func (a *App) UpdateNotes(notes string) {
+	os.WriteFile("/tmp/engress_notes.txt", []byte(notes), 0644)
+}
+
+func (a *App) SetHUDScratchpadVisible(visible bool) {
+	a.isHUDScratchpadVisible = visible
+	a.UpdateTrayTime(a.currentTimeStr)
+}
+
+func (a *App) startHUDNotesWatcher() {
+	ticker := time.NewTicker(500 * time.Millisecond)
+	for range ticker.C {
+		if !a.isHUDScratchpadVisible {
+			continue
+		}
+		data, err := os.ReadFile("/tmp/engress_notes_hud.txt")
+		if err == nil {
+			content := string(data)
+			if content != a.lastHUDNotes {
+				a.lastHUDNotes = content
+				runtime.EventsEmit(a.ctx, "hud-notes-update", content)
+			}
+		}
 	}
 }
 

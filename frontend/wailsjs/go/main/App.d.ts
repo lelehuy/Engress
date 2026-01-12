@@ -44,6 +44,8 @@ export function ResetAppData():Promise<string>;
 
 export function SaveState(arg1:main.AppState):Promise<void>;
 
+export function SetHUDScratchpadVisible(arg1:boolean):Promise<void>;
+
 export function SetPauseState(arg1:boolean):Promise<void>;
 
 export function SetSessionCategory(arg1:string):Promise<void>;
@@ -55,6 +57,8 @@ export function ShowWindow():Promise<void>;
 export function StartScheduler():Promise<void>;
 
 export function UpdateLastLogSession(arg1:string,arg2:number,arg3:string,arg4:string):Promise<void>;
+
+export function UpdateNotes(arg1:string):Promise<void>;
 
 export function UpdateProfileName(arg1:string):Promise<void>;
 

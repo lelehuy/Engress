@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Clock, ChevronLeft, Save, Star, AlertCircle, BookOpen, Mic, PenTool, Headphones, Trophy } from 'lucide-react';
 import SessionTimer from '../../components/SessionTimer';
-import { SetSessionCategory } from '../../../wailsjs/go/main/App';
+import { SetSessionCategory, UpdateNotes, SetHUDScratchpadVisible } from '../../../wailsjs/go/main/App';
+import { EventsOn } from '../../../wailsjs/runtime/runtime';
 
 const Mockup = ({ onBack, onFinish, initialData, onUpdate }: {
     onBack: () => void;
@@ -13,10 +14,38 @@ const Mockup = ({ onBack, onFinish, initialData, onUpdate }: {
     const [step, setStep] = useState(initialData?.step || 0); // 0: Start, 1: Listening, 2: Reading, 3: Writing, 4: Speaking, 5: Finish
     const [duration, setSeconds] = useState(initialData?.duration || 0);
     const [scores, setScores] = useState(initialData?.scores || { listening: 0, reading: 0, writing: 0, speaking: 0 });
+    const [notes, setNotes] = useState(initialData?.notes || '');
 
     useEffect(() => {
-        if (onUpdate) onUpdate({ step, duration, scores });
+        if (onUpdate) onUpdate({ step, duration, scores, notes });
+        UpdateNotes(notes);
+    }, [step, duration, scores, notes, onUpdate]);
 
+    useEffect(() => {
+        const handleBlur = () => {
+            // Mockup always supports scratchpad as it's a long simulation
+            SetHUDScratchpadVisible(true);
+        };
+        const handleFocus = () => {
+            SetHUDScratchpadVisible(false);
+        };
+
+        window.addEventListener('blur', handleBlur);
+        window.addEventListener('focus', handleFocus);
+
+        const unlisten = EventsOn("hud-notes-update", (newNotes: string) => {
+            setNotes(newNotes);
+        });
+
+        return () => {
+            window.removeEventListener('blur', handleBlur);
+            window.removeEventListener('focus', handleFocus);
+            unlisten();
+            SetHUDScratchpadVisible(false);
+        };
+    }, []);
+
+    useEffect(() => {
         // HUD Logic for Full Mockup
         // Listening: 0-30m (0-1800s)
         // Reading: 30-90m (1800-5400s)
@@ -39,7 +68,6 @@ const Mockup = ({ onBack, onFinish, initialData, onUpdate }: {
         } else {
             SetSessionCategory(phase);
         }
-
     }, [step, duration, scores, onUpdate]);
 
     const steps = [

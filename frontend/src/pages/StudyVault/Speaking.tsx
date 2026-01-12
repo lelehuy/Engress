@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { Mic, Play, Square, RotateCcw, Save, ChevronLeft, Volume2, Shield, Settings, Lightbulb, ExternalLink, X, Share2, Target, Star, PenTool } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import SessionTimer from '../../components/SessionTimer';
+import { GetAppState, UpdateNotes, SetHUDScratchpadVisible } from "../../../wailsjs/go/main/App";
+import { EventsOn } from '../../../wailsjs/runtime/runtime';
 import { preparationTips } from '../../data/prepTips';
 
 const Speaking = ({ onBack, onFinish, initialData, onUpdate }: {
@@ -39,7 +41,31 @@ const Speaking = ({ onBack, onFinish, initialData, onUpdate }: {
                 audioUrl
             });
         }
+        UpdateNotes(notes);
     }, [isRecording, duration, hasRecording, sourceUrl, screenshot, title, notes, audioUrl, onUpdate]);
+
+    useEffect(() => {
+        const handleBlur = () => {
+            SetHUDScratchpadVisible(true);
+        };
+        const handleFocus = () => {
+            SetHUDScratchpadVisible(false);
+        };
+
+        window.addEventListener('blur', handleBlur);
+        window.addEventListener('focus', handleFocus);
+
+        const unlisten = EventsOn("hud-notes-update", (newNotes: string) => {
+            setNotes(newNotes);
+        });
+
+        return () => {
+            window.removeEventListener('blur', handleBlur);
+            window.removeEventListener('focus', handleFocus);
+            unlisten();
+            SetHUDScratchpadVisible(false);
+        };
+    }, []);
 
     const updateVisualizer = () => {
         if (!analyserRef.current || !isRecording) return;

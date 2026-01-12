@@ -13,6 +13,7 @@ import Briefing from './pages/Briefing';
 import { EventsOn } from "../wailsjs/runtime/runtime";
 import { LogSession, GetAppState, SetPauseState, SetSessionCategory } from "../wailsjs/go/main/App";
 import { useRef } from 'react';
+import AppIcon from './assets/images/appicon.png';
 
 function App() {
     const [currentPage, setCurrentPage] = useState('dashboard');
@@ -83,22 +84,22 @@ function App() {
 
     useEffect(() => {
         refreshAppState();
-        EventsOn("url-active", (url: string) => {
+
+        const unlistenUrl = EventsOn("url-active", (url: string) => {
             setActiveUrl(url);
         });
 
-        // Listen for HUD Stop
-        EventsOn("hud-stop", () => {
-            handleFinish();
+        const unlistenStop = EventsOn("hud-stop", () => {
+            if (sessionRef.current.isActive) {
+                handleFinish();
+            }
         });
 
-        // Listen for Pause (Go can pause sessions too)
-        EventsOn("pause-state-changed", (isPaused: boolean) => {
-            // No direct action needed here as sessionState will be updated by parent if we had one,
-            // but we can use this to sync UI. App.tsx doesn't have an isPaused state yet? 
-            // Wait, StudyVault handles its own timer. 
-        });
-    }, [activeSession]); // Depend on activeSession so handleFinish has latest state
+        return () => {
+            unlistenUrl();
+            unlistenStop();
+        };
+    }, []);
 
     useEffect(() => {
         if (activeSession.isActive && activeSession.category) {
@@ -222,8 +223,8 @@ function App() {
             {(!activeSession.isActive || !activeSession.category) && (
                 <aside className={`hidden md:flex ${sidebarCollapsed ? 'w-20' : 'w-64'} glass border-r h-full flex-col p-4 transition-all duration-300 relative group`}>
                     <div className={`flex items-center gap-3 mb-10 px-2 pt-6 ${sidebarCollapsed ? 'justify-center' : ''}`}>
-                        <div className="bg-indigo-600 p-2 rounded-xl shadow-lg shadow-indigo-500/20 shrink-0">
-                            <Shield className="w-6 h-6 text-white" />
+                        <div className="shrink-0 w-10 h-10">
+                            <img src={AppIcon} alt="Engress Logo" className="w-full h-full object-contain rounded-xl shadow-lg shadow-indigo-500/10" />
                         </div>
                         {!sidebarCollapsed && <span className="text-xl font-bold tracking-tight italic uppercase animate-in fade-in duration-500">Engress</span>}
                     </div>
@@ -299,8 +300,8 @@ function App() {
                 <header className={`flex items-center justify-between px-4 sm:px-8 z-20 transition-all ${activeSession.isActive && activeSession.category ? 'h-16 bg-zinc-950 border-b border-white/5' : 'h-20'}`}>
                     <div className="flex items-center gap-6">
                         {/* Mobile Logo */}
-                        <div className="md:hidden bg-indigo-600 p-1.5 rounded-lg shadow-lg">
-                            <Shield className="w-4 h-4 text-white" />
+                        <div className="md:hidden w-8 h-8 shrink-0">
+                            <img src={AppIcon} alt="Engress Logo" className="w-full h-full object-contain rounded-lg shadow-lg" />
                         </div>
 
                         {activeSession.category ? (
@@ -388,10 +389,18 @@ function App() {
                                     }}
                                     onUpdateSession={(data: any) => {
                                         setActiveSession((prev: any) => {
-                                            // Only ignore if both are inactive AND there's no new category (no session starting)
-                                            if (!prev.isActive && !data.isActive && !data.category) return prev;
+                                            // 1. If we are explicitly clearing the session, don't allow revival
+                                            if (data.category === null) {
+                                                return { category: null, startTime: 0, data: null, isActive: false };
+                                            }
 
-                                            // Auto-collapse sidebar when a session becomes active
+                                            // 2. If the current session is empty (finished), don't allow late updates to revive it
+                                            // unless this is a NEW session start (data.category provided and data.isActive is true)
+                                            if (!prev.category && !data.isActive) {
+                                                return prev;
+                                            }
+
+                                            // 3. Auto-collapse sidebar when a session becomes active
                                             if (data.isActive && !prev.isActive) {
                                                 setSidebarCollapsed(true);
                                             }
@@ -400,7 +409,7 @@ function App() {
                                                 ...prev,
                                                 category: data.category || prev.category || vaultCategory,
                                                 data: { ...prev.data, ...data },
-                                                isActive: data.isActive !== undefined ? data.isActive : true
+                                                isActive: data.isActive !== undefined ? data.isActive : prev.isActive
                                             };
                                         });
                                     }}

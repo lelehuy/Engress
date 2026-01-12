@@ -28,9 +28,117 @@ class EngressHUD: NSPanel {
     }
 }
 
-@main
+class ScratchpadHUD: NSPanel, NSTextViewDelegate {
+    var textView: NSTextView?
+    var lastSavedContent: String = ""
+    let notesAppPath = "/tmp/engress_notes.txt"
+    let notesHudPath = "/tmp/engress_notes_hud.txt"
+
+    init(contentRect: NSRect) {
+        super.init(
+            contentRect: contentRect,
+            styleMask: [.borderless, .resizable, .nonactivatingPanel],
+            backing: .buffered,
+            defer: false
+        )
+        self.level = .floating
+        self.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+        self.backgroundColor = .clear
+        self.isOpaque = false
+        self.hasShadow = true
+        self.isMovableByWindowBackground = true
+        self.isReleasedWhenClosed = false
+        
+        // Background
+        let visualEffect = NSVisualEffectView(frame: NSRect(origin: .zero, size: contentRect.size))
+        visualEffect.material = .hudWindow
+        visualEffect.blendingMode = .behindWindow
+        visualEffect.state = .active
+        visualEffect.wantsLayer = true
+        visualEffect.layer?.cornerRadius = 20
+        visualEffect.layer?.borderWidth = 1.0
+        visualEffect.layer?.borderColor = NSColor.white.withAlphaComponent(0.1).cgColor
+        visualEffect.autoresizingMask = [.width, .height]
+        self.contentView = visualEffect
+        
+        // Header Info
+        let label = NSTextField(frame: NSRect(x: 20, y: contentRect.height - 35, width: 200, height: 20))
+        label.isEditable = false
+        label.isBordered = false
+        label.backgroundColor = .clear
+        label.textColor = NSColor.white.withAlphaComponent(0.3)
+        label.stringValue = "SCRATCHPAD & NOTES"
+        label.font = NSFont.systemFont(ofSize: 10, weight: .black)
+        label.autoresizingMask = [.minYMargin]
+        visualEffect.addSubview(label)
+        
+        // Close Button
+        let closeBtn = NSButton(frame: NSRect(x: contentRect.width - 40, y: contentRect.height - 35, width: 24, height: 24))
+        closeBtn.title = "✕"
+        closeBtn.bezelStyle = .recessed
+        closeBtn.isBordered = false
+        closeBtn.target = self
+        closeBtn.action = #selector(hideMe)
+        closeBtn.autoresizingMask = [.minXMargin, .minYMargin]
+        visualEffect.addSubview(closeBtn)
+
+        // Scroll View & Text View
+        let scrollView = NSScrollView(frame: NSRect(x: 10, y: 10, width: contentRect.width - 20, height: contentRect.height - 50))
+        scrollView.hasVerticalScroller = true
+        scrollView.drawsBackground = false
+        scrollView.autoresizingMask = [.width, .height]
+        
+        textView = NSTextView(frame: scrollView.bounds)
+        textView?.isEditable = true
+        textView?.isSelectable = true
+        textView?.delegate = self
+        textView?.backgroundColor = .clear
+        textView?.textColor = .white
+        textView?.insertionPointColor = .white
+        textView?.font = NSFont.systemFont(ofSize: 13, weight: .medium)
+        textView?.drawsBackground = false
+        
+        scrollView.documentView = textView
+        visualEffect.addSubview(scrollView)
+    }
+
+    override var canBecomeKey: Bool { return true }
+    override var canBecomeMain: Bool { return true }
+    
+    @objc func hideMe() {
+        AppDelegate.shared?.sendCommand("HIDE_SCRATCHPAD")
+        self.alphaValue = 0.0
+    }
+    
+    func textDidChange(_ notification: Notification) {
+        let content = textView?.string ?? ""
+        if content != lastSavedContent {
+            lastSavedContent = content
+            try? content.write(toFile: notesHudPath, atomically: true, encoding: .utf8)
+        }
+    }
+    
+    func updateContent(from file: String) {
+        // Don't pull updates from the app while the user is typing in the HUD
+        if self.isKeyWindow { return }
+        
+        if let content = try? String(contentsOfFile: file, encoding: .utf8), content != textView?.string {
+            let selectedRange = textView?.selectedRange()
+            textView?.string = content
+            lastSavedContent = content
+            if let range = selectedRange, range.location + range.length <= content.count {
+                textView?.setSelectedRange(range)
+            }
+        }
+    }
+}
+
 class AppDelegate: NSObject, NSApplicationDelegate {
-    var window: EngressHUD?
+    static var shared: AppDelegate?
+    
+    var timerWindow: EngressHUD?
+    var scratchWindow: ScratchpadHUD?
+    
     var timer: Timer?
     var timerLabel: NSTextField?
     var sessionLabel: NSTextField?
@@ -39,22 +147,30 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     let timerPath = "/tmp/sentinel_timer.txt"
     let cmdPath = "/tmp/engress_cmd.txt"
-
-    static func main() {
-        let app = NSApplication.shared
-        let delegate = AppDelegate()
-        app.delegate = delegate
-        app.run()
-    }
+    let notesAppPath = "/tmp/engress_notes.txt"
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let screen = NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
-        // More compact but elegant
-        let rect = NSRect(x: screen.width - 250, y: screen.height - 100, width: 230, height: 64)
         
-        window = EngressHUD(contentRect: rect)
+        // 1. Timer Window Setup
+        let tRect = NSRect(x: screen.width - 250, y: screen.height - 100, width: 230, height: 64)
+        timerWindow = EngressHUD(contentRect: tRect)
+        setupTimerUI(in: timerWindow!)
         
-        // Session Type (Dimmest, smallest)
+        // 2. Scratchpad Window Setup
+        let sRect = NSRect(x: screen.width - 420, y: screen.height - 520, width: 400, height: 400)
+        scratchWindow = ScratchpadHUD(contentRect: sRect)
+        scratchWindow?.alphaValue = 0.0
+        
+        timerWindow?.makeKeyAndOrderFront(nil)
+        scratchWindow?.makeKeyAndOrderFront(nil)
+        
+        timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { _ in
+            self.updateData()
+        }
+    }
+
+    func setupTimerUI(in window: EngressHUD) {
         sessionLabel = NSTextField(frame: NSRect(x: 15, y: 38, width: 140, height: 20))
         sessionLabel?.isEditable = false
         sessionLabel?.isBordered = false
@@ -64,7 +180,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         sessionLabel?.font = NSFont.systemFont(ofSize: 9, weight: .bold)
         sessionLabel?.stringValue = "FOCUS MODE"
         
-        // Timer Label (Primary)
         timerLabel = NSTextField(frame: NSRect(x: 12, y: 8, width: 110, height: 40))
         timerLabel?.isEditable = false
         timerLabel?.isBordered = false
@@ -74,32 +189,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         timerLabel?.font = NSFont.monospacedDigitSystemFont(ofSize: 28, weight: .bold)
         timerLabel?.stringValue = "0:00"
         
-        // Interaction: Click label to open app
         let clickGesture = NSClickGestureRecognizer(target: self, action: #selector(openApp))
         timerLabel?.addGestureRecognizer(clickGesture)
         
-        // Buttons Container (Right Side)
         let btnContainer = NSView(frame: NSRect(x: 125, y: 0, width: 100, height: 64))
-        
-        // Pause Button - Circular
         pauseButton = createCircularButton(iconName: "pause.fill", frame: NSRect(x: 5, y: 14, width: 36, height: 36), action: #selector(togglePause))
-        
-        // Stop Button - Circular
         stopButton = createCircularButton(iconName: "stop.fill", frame: NSRect(x: 48, y: 14, width: 36, height: 36), action: #selector(stopSession))
         stopButton?.contentTintColor = .systemRed
 
-        window?.contentView?.addSubview(sessionLabel!)
-        window?.contentView?.addSubview(timerLabel!)
+        window.contentView?.addSubview(sessionLabel!)
+        window.contentView?.addSubview(timerLabel!)
         btnContainer.addSubview(pauseButton!)
         btnContainer.addSubview(stopButton!)
-        window?.contentView?.addSubview(btnContainer)
-        
-        window?.makeKeyAndOrderFront(nil)
-        window?.orderFrontRegardless()
-        
-        timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { _ in
-            self.updateData()
-        }
+        window.contentView?.addSubview(btnContainer)
     }
 
     func createCircularButton(iconName: String, frame: NSRect, action: Selector) -> NSButton {
@@ -119,19 +221,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         return btn
     }
 
-    @objc func togglePause() {
-        sendCommand("TOGGLE_PAUSE")
-    }
+    @objc func togglePause() { sendCommand("TOGGLE_PAUSE") }
+    @objc func stopSession() { sendCommand("STOP") }
+    @objc func openApp() { sendCommand("OPEN") }
 
-    @objc func stopSession() {
-        sendCommand("STOP")
-    }
-    
-    @objc func openApp() {
-        sendCommand("OPEN")
-    }
-
-    func sendCommand(_ cmd: String) {
+    public func sendCommand(_ cmd: String) {
         try? cmd.write(toFile: cmdPath, atomically: true, encoding: .utf8)
     }
 
@@ -139,35 +233,44 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         do {
             let content = try String(contentsOfFile: timerPath, encoding: .utf8)
             let trimmed = content.trimmingCharacters(in: .whitespacesAndNewlines)
+            let parts = trimmed.components(separatedBy: "|")
             
-            if trimmed == "HIDDEN" || trimmed.isEmpty {
-                window?.alphaValue = 0.0
+            let isHidden = trimmed.isEmpty || 
+                           trimmed.uppercased().contains("HIDDEN") || 
+                           (parts.count > 0 && parts[0].trimmingCharacters(in: .whitespacesAndNewlines).uppercased() == "HIDDEN")
+            
+            if isHidden {
+                timerWindow?.alphaValue = 0.0
+                scratchWindow?.alphaValue = 0.0
+                timerWindow?.setIsVisible(false)
+                scratchWindow?.setIsVisible(false)
                 return
             }
             
-            window?.alphaValue = 1.0
-            
-            let parts = trimmed.components(separatedBy: "|")
+            timerWindow?.setIsVisible(true)
+            timerWindow?.alphaValue = 1.0
             timerLabel?.stringValue = parts[0]
             
             if parts.count > 1 && !parts[1].isEmpty {
-                let text = parts[1].uppercased()
-                sessionLabel?.stringValue = text
-                
-                if text.contains(">>>") {
-                    sessionLabel?.textColor = .systemRed
-                    sessionLabel?.font = NSFont.systemFont(ofSize: 10, weight: .black)
-                } else {
-                    sessionLabel?.textColor = NSColor.white.withAlphaComponent(0.4)
-                    sessionLabel?.font = NSFont.systemFont(ofSize: 9, weight: .bold)
-                }
-            } else {
-                sessionLabel?.stringValue = "FOCUS MODE"
-                sessionLabel?.textColor = NSColor.white.withAlphaComponent(0.4)
+                sessionLabel?.stringValue = parts[1].uppercased()
             }
             
+            if parts.count > 2 {
+                let scratchVisible = parts[2] == "1"
+                scratchWindow?.alphaValue = scratchVisible ? 1.0 : 0.0
+                if scratchVisible {
+                    scratchWindow?.updateContent(from: notesAppPath)
+                }
+            }
         } catch {
-            window?.alphaValue = 0.0
+            timerWindow?.alphaValue = 0.0
+            scratchWindow?.alphaValue = 0.0
         }
     }
 }
+
+let app = NSApplication.shared
+let delegate = AppDelegate()
+AppDelegate.shared = delegate
+app.delegate = delegate
+app.run()

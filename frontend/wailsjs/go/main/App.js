@@ -86,6 +86,10 @@ export function SaveState(arg1) {
   return window['go']['main']['App']['SaveState'](arg1);
 }
 
+export function SetHUDScratchpadVisible(arg1) {
+  return window['go']['main']['App']['SetHUDScratchpadVisible'](arg1);
+}
+
 export function SetPauseState(arg1) {
   return window['go']['main']['App']['SetPauseState'](arg1);
 }
@@ -108,6 +112,10 @@ export function StartScheduler() {
 
 export function UpdateLastLogSession(arg1, arg2, arg3, arg4) {
   return window['go']['main']['App']['UpdateLastLogSession'](arg1, arg2, arg3, arg4);
+}
+
+export function UpdateNotes(arg1) {
+  return window['go']['main']['App']['UpdateNotes'](arg1);
 }
 
 export function UpdateProfileName(arg1) {

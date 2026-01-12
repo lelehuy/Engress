@@ -16,6 +16,8 @@ const Analytics = ({ onNavigate }: { onNavigate: (page: string, params?: string,
     const [showPhaseDetail, setShowPhaseDetail] = useState(false);
     const [showTrainingDetail, setShowTrainingDetail] = useState(false);
     const [streak, setStreak] = useState(0);
+    const [consistencyPhase, setConsistencyPhase] = useState<'Stable' | 'Slipping' | 'Neglect'>('Stable');
+    const [retentionRate, setRetentionRate] = useState(100);
 
     useEffect(() => {
         GetAppState().then(state => {
@@ -64,6 +66,18 @@ const Analytics = ({ onNavigate }: { onNavigate: (page: string, params?: string,
                     .reduce((acc: number, log: any) => acc + (log.duration || 0), 0);
             }
             setWeeklyPulse(pulse);
+
+            // Calculate Consistency Phase and Retention
+            if (uniqueDates.length > 0) {
+                const lastDate = new Date(uniqueDates[0]);
+                const diffDays = Math.floor((new Date().getTime() - lastDate.getTime()) / (1000 * 3600 * 24));
+
+                if (diffDays > 3) setConsistencyPhase('Neglect');
+                else if (diffDays > 1) setConsistencyPhase('Slipping');
+                else setConsistencyPhase('Stable');
+
+                setRetentionRate(Math.max(60, 100 - (diffDays * 1.5)));
+            }
         });
     }, []);
 
@@ -208,22 +222,52 @@ const Analytics = ({ onNavigate }: { onNavigate: (page: string, params?: string,
                             onClick={() => setShowStreakDetail(true)}
                             className="glass p-6 sm:p-8 rounded-[2rem] space-y-6 border-dashed bg-transparent min-h-[180px] cursor-pointer hover:bg-white/5 transition-all"
                         >
-                            <h4 className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Execution Pulse</h4>
-                            <div className="flex items-end gap-2 lg:gap-3 h-24">
-                                {weeklyPulse.map((h, i) => (
-                                    <motion.div
-                                        key={i}
-                                        initial={{ height: 0 }}
-                                        animate={{ height: `${Math.max(10, Math.min((h / 120) * 100, 100))}%` }}
-                                        className={`flex-1 rounded-t-lg transition-all cursor-pointer relative group ${i === 6 ? 'bg-indigo-500' : 'bg-zinc-800 hover:bg-indigo-500/50'}`}
-                                    >
-                                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-white text-black text-[8px] font-bold px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-20">
-                                            {h}m focus
+                            <div className="flex items-end gap-2 lg:gap-3 h-24 relative">
+                                {/* Ideal Consistency Background (Ghost Bars) */}
+                                <div className="absolute inset-0 flex items-end gap-2 lg:gap-3 pointer-events-none">
+                                    {new Array(7).fill(0).map((_, i) => (
+                                        <div key={`ghost-${i}`} className="flex-1 h-full bg-white/[0.02] border border-white/[0.05] rounded-t-lg" />
+                                    ))}
+                                </div>
+
+                                {weeklyPulse.map((h, i) => {
+                                    const idealHeight = 100; // 120m is 100%
+                                    const actualHeight = Math.min((h / 120) * 100, 100);
+                                    const hasGap = h < 120;
+
+                                    return (
+                                        <div key={i} className="flex-1 h-full relative group">
+                                            {/* Gap Shadow (Red Hatch) */}
+                                            {hasGap && (
+                                                <div
+                                                    className="absolute inset-x-0 bg-red-500/10 rounded-t-lg"
+                                                    style={{
+                                                        height: `${idealHeight - actualHeight}%`,
+                                                        bottom: `${actualHeight}%`
+                                                    }}
+                                                />
+                                            )}
+
+                                            <motion.div
+                                                initial={{ height: 0 }}
+                                                animate={{ height: `${actualHeight}%` }}
+                                                className={`absolute bottom-0 inset-x-0 rounded-t-lg transition-all cursor-pointer ${i === 6 ? 'bg-indigo-500' : 'bg-zinc-800 hover:bg-indigo-500/50'}`}
+                                            >
+                                                <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-white text-black text-[8px] font-bold px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-20">
+                                                    {h}m focus
+                                                </div>
+                                            </motion.div>
                                         </div>
-                                    </motion.div>
-                                ))}
+                                    );
+                                })}
                             </div>
-                            <p className="text-[10px] text-zinc-600 font-bold text-center">LAST 7 DAYS ACTIVITY</p>
+                            <div className="flex justify-between items-center px-1">
+                                <p className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest text-center">Execution Pulse</p>
+                                <div className="flex items-center gap-2">
+                                    <div className="w-2 h-2 rounded-full bg-white/10" />
+                                    <span className="text-[8px] font-black text-zinc-700">GHOST PACE (120M/DAY)</span>
+                                </div>
+                            </div>
                         </div>
 
                         <div
@@ -273,12 +317,26 @@ const Analytics = ({ onNavigate }: { onNavigate: (page: string, params?: string,
                                         ) : null}
                                     </svg>
                                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                        <span className="text-3xl sm:text-4xl xl:text-5xl font-black italic tracking-tighter text-white">
+                                        <motion.span
+                                            animate={consistencyPhase !== 'Stable' ? {
+                                                color: ['#ffffff', '#ef4444', '#ffffff'],
+                                                opacity: [1, 0.7, 1],
+                                            } : {}}
+                                            transition={consistencyPhase !== 'Stable' ? {
+                                                duration: 2,
+                                                repeat: Infinity,
+                                                ease: "linear"
+                                            } : {}}
+                                            className={`text-3xl sm:text-4xl xl:text-5xl font-black italic tracking-tighter ${consistencyPhase === 'Stable' ? 'text-white' : 'text-red-500/80 drop-shadow-[0_0_8px_rgba(239,68,68,0.4)]'}`}
+                                        >
                                             {sessionLogs.filter(l => l.score > 0).length > 0
                                                 ? roundToIELTS(sessionLogs.filter(l => l.score > 0).reduce((acc, curr) => acc + curr.score, 0) / sessionLogs.filter(l => l.score > 0).length).toFixed(1)
                                                 : "—"
                                             }
-                                        </span>
+                                        </motion.span>
+                                        {consistencyPhase !== 'Stable' && (
+                                            <span className="text-[8px] font-black text-red-500 animate-pulse mt-1">Numerical Erosion Active</span>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -294,7 +352,14 @@ const Analytics = ({ onNavigate }: { onNavigate: (page: string, params?: string,
                             </div>
                         </div>
 
-                        <div className="pt-8 border-t border-white/5 mt-6 sm:mt-0">
+                        <div className="pt-8 border-t border-white/5 mt-6 sm:mt-0 space-y-4">
+                            <div className="flex justify-between items-center text-[9px] font-black uppercase">
+                                <div className="text-zinc-600">Skill Retention</div>
+                                <div className={`${retentionRate > 95 ? 'text-emerald-500' : 'text-red-500'} flex items-center gap-1`}>
+                                    <div className={`w-1 h-1 rounded-full ${retentionRate > 95 ? 'bg-emerald-500' : 'bg-red-500 animate-ping'}`} />
+                                    {retentionRate.toFixed(1)}%
+                                </div>
+                            </div>
                             <button
                                 onClick={handleExport}
                                 className="w-full py-4 bg-zinc-900 rounded-2xl text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-white transition-all flex items-center justify-center gap-2"
@@ -554,26 +619,57 @@ const Analytics = ({ onNavigate }: { onNavigate: (page: string, params?: string,
                                 </div>
 
                                 <div className="space-y-4">
-                                    {moduleAverages.map((m, i) => (
-                                        <div key={i} className="flex items-center justify-between p-4 bg-zinc-950/50 rounded-2xl border border-white/5">
-                                            <div className="flex items-center gap-3">
-                                                <div className={`w-2 h-2 rounded-full ${getCategoryColorClass(m.name, 'bg')}`} />
-                                                <span className="text-xs font-black uppercase tracking-widest text-zinc-300">{m.name}</span>
-                                            </div>
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-32 h-1.5 bg-zinc-900 rounded-full overflow-hidden">
-                                                    <motion.div
-                                                        initial={{ width: 0 }}
-                                                        animate={{ width: `${(m.avg / 9) * 100}%` }}
-                                                        className={`h-full ${getCategoryColorClass(m.name, 'bg')}`}
-                                                    />
+                                    {moduleAverages.map((m, i) => {
+                                        const target = 7.5;
+                                        const gap = Math.max(0, target - m.avg);
+                                        // Simple formula: each 0.5 gap requires ~8 specialized units (essays/hours)
+                                        const essaysNeeded = Math.ceil((gap / 0.5) * 6);
+                                        const hoursNeeded = Math.ceil((gap / 0.5) * 4);
+
+                                        return (
+                                            <div key={i} className="space-y-2">
+                                                <div className="flex items-center justify-between p-4 bg-zinc-950/50 rounded-2xl border border-white/5 relative overflow-hidden group">
+                                                    <div className="flex items-center gap-3 relative z-10">
+                                                        <div className={`w-2 h-2 rounded-full ${getCategoryColorClass(m.name, 'bg')}`} />
+                                                        <span className="text-xs font-black uppercase tracking-widest text-zinc-300">{m.name}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-4 relative z-10">
+                                                        <div className="w-32 h-1.5 bg-zinc-900 rounded-full overflow-hidden relative">
+                                                            {/* Ghost Bar (Target 7.5) */}
+                                                            <div
+                                                                className="absolute top-0 bottom-0 border-r-2 border-white/20 z-0"
+                                                                style={{ left: `${(target / 9) * 100}%` }}
+                                                            />
+                                                            <motion.div
+                                                                initial={{ width: 0 }}
+                                                                animate={{ width: `${(m.avg / 9) * 100}%` }}
+                                                                className={`h-full relative z-10 ${getCategoryColorClass(m.name, 'bg')}`}
+                                                            />
+                                                        </div>
+                                                        <span className="text-sm font-black text-white tabular-nums w-8 text-right">
+                                                            {m.avg > 0 ? m.avg.toFixed(1) : "—"}
+                                                        </span>
+                                                    </div>
+
+                                                    {/* Gap Masking */}
                                                 </div>
-                                                <span className="text-sm font-black text-white tabular-nums w-8 text-right">
-                                                    {m.avg > 0 ? m.avg.toFixed(1) : "—"}
-                                                </span>
+
+                                                {gap > 0 && (
+                                                    <div className="px-4 flex justify-between items-center bg-white/[0.02] py-2 rounded-xl border border-white/5">
+                                                        <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest">Required to bridge gap:</span>
+                                                        <div className="flex gap-4">
+                                                            <div className="flex flex-col items-end">
+                                                                <span className="text-[10px] font-black text-indigo-400 italic">~{essaysNeeded} Targeted Sessions</span>
+                                                            </div>
+                                                            <div className="flex flex-col items-end border-l border-white/10 pl-4">
+                                                                <span className="text-[10px] font-black text-emerald-400 italic">~{hoursNeeded}h Drill Focus</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
 
                                 <div className="p-6 bg-indigo-500/5 rounded-3xl border border-indigo-500/10 space-y-2">
@@ -710,7 +806,12 @@ const Analytics = ({ onNavigate }: { onNavigate: (page: string, params?: string,
                                 <div className="p-6 bg-zinc-950/50 rounded-3xl border border-white/5 space-y-4">
                                     <div className="flex justify-between items-baseline border-b border-white/5 pb-4">
                                         <span className="text-zinc-500 text-xs font-medium">Training Accumulation</span>
-                                        <span className="text-2xl font-black text-white italic">{Math.ceil(sessionLogs.reduce((acc: number, log: any) => acc + (log.duration || 0), 0) / 60)} Hours</span>
+                                        <span className="text-2xl font-black text-white italic">
+                                            {sessionLogs.reduce((acc: number, log: any) => acc + (log.duration || 0), 0) < 60
+                                                ? `${sessionLogs.reduce((acc: number, log: any) => acc + (log.duration || 0), 0)} Minutes`
+                                                : `${(sessionLogs.reduce((acc: number, log: any) => acc + (log.duration || 0), 0) / 60).toFixed(1)} Hours`
+                                            }
+                                        </span>
                                     </div>
 
                                     <div className="space-y-4 pt-2">
