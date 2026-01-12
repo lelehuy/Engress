@@ -1,0 +1,29 @@
+build/bin
+frontend/dist
+frontend/node_modules
+
+# Binaries
+engress_hud
+sentinel_bar
+*.exe
+*.dll
+*.so
+*.dylib
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Output
+*.dmg
+*.app
+
+# Local Data (just in case)
+*.json
+!wails.json
+!frontend/package.json
+!frontend/tsconfig.json
+!frontend/package-lock.json
+
+# User documents
+*.pdf
