@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Settings as SettingsIcon, Calendar, Save, Zap, Bell, Lock, Clock, Shield, User } from 'lucide-react';
-import { GetAppState, UpdateTestDate, UpdateReminders, UpdateProfileName } from "../../wailsjs/go/main/App";
+import { GetAppState, UpdateTestDate, UpdateReminders, UpdateProfileName, GetAppVersion } from "../../wailsjs/go/main/App";
 
 const Settings = () => {
     const [name, setName] = useState('');
@@ -9,6 +9,7 @@ const Settings = () => {
     const [isSaving, setIsSaving] = useState(false);
     const [reminderEnabled, setReminderEnabled] = useState(true);
     const [reminderTime, setReminderTime] = useState('10:00');
+    const [appVersion, setAppVersion] = useState('v0.0.0');
 
     useEffect(() => {
         GetAppState().then(state => {
@@ -23,6 +24,8 @@ const Settings = () => {
             }
             setReminderEnabled(state.user_profile.reminder_enabled !== false);
         });
+
+        GetAppVersion().then(v => setAppVersion(v));
     }, []);
 
     const handleSave = async () => {
@@ -154,35 +157,33 @@ const Settings = () => {
 
                     <div className="glass p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] border-dashed border-white/10 space-y-4">
                         <div className="flex items-center gap-2">
-                            <Bell className="w-4 h-4 text-zinc-500" />
-                            <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Global Protocol</span>
+                            <SettingsIcon className="w-4 h-4 text-zinc-500" />
+                            <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">About Engress</span>
                         </div>
-                        <div className="space-y-4">
-                            <div className="space-y-3">
-                                {['Daily Mission Alerts', 'Session Reminders', 'System Notifications'].map((item, i) => (
-                                    <div key={i} className="flex items-center justify-between group cursor-pointer">
-                                        <span className="text-[10px] sm:text-xs font-bold text-zinc-500 group-hover:text-zinc-300 transition-colors uppercase tracking-tight">{item}</span>
-                                        <div className="w-7 sm:w-8 h-3.5 sm:h-4 bg-zinc-800 rounded-full relative">
-                                            <div className={`absolute top-0.5 left-0.5 w-2.5 sm:w-3 h-2.5 sm:h-3 rounded-full bg-indigo-500 transition-all ${true ? 'left-auto right-0.5' : 'left-0.5'}`} />
-                                        </div>
-                                    </div>
-                                ))}
+                        <div className="flex flex-col items-center text-center space-y-4 py-4">
+                            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center p-3 border border-white/5 shadow-2xl">
+                                <img src="/src/assets/images/logo-universal.png" className="w-full h-full object-contain opacity-80" alt="Engress Logo" />
                             </div>
+                            <div>
+                                <h4 className="text-xl font-black text-white italic uppercase tracking-tighter">Engress</h4>
+                                <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mt-1">Version {appVersion}</p>
+                            </div>
+                        </div>
 
-                            <button
-                                onClick={handleTestAlert}
-                                className={`w-full py-3 border rounded-xl text-[9px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 active:scale-95 ${testSent ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-zinc-900 border-white/5 text-zinc-500 hover:bg-zinc-800 hover:text-white'}`}
-                            >
-                                <Zap className={`w-3.5 h-3.5 ${testSent ? 'animate-pulse' : ''}`} />
-                                {testSent ? 'Transmission Sent' : 'Force System Alert'}
-                            </button>
-
+                        <div className="space-y-3 pt-4 border-t border-white/5">
                             <button
                                 onClick={() => import('../../wailsjs/go/main/App').then(({ CheckForUpdates }) => CheckForUpdates())}
                                 className="w-full py-3 border border-white/5 bg-zinc-900 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500 hover:bg-zinc-800 hover:text-white transition-all flex items-center justify-center gap-3 active:scale-95"
                             >
-                                <SettingsIcon className="w-3.5 h-3.5" />
+                                <Zap className="w-3.5 h-3.5" />
                                 Check for Updates
+                            </button>
+
+                            <button
+                                onClick={handleTestAlert}
+                                className={`w-full py-3 border rounded-xl text-[9px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 active:scale-95 ${testSent ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-transparent border-transparent text-zinc-600 hover:text-zinc-400'}`}
+                            >
+                                {testSent ? 'System Alert Sent' : 'Test Notifications'}
                             </button>
                         </div>
                     </div>

@@ -18,6 +18,8 @@ export function ExportData():Promise<void>;
 
 export function GetAppState():Promise<main.AppState>;
 
+export function GetAppVersion():Promise<string>;
+
 export function GetConsistencyPhase():Promise<string>;
 
 export function GetEngressBriefing():Promise<string>;

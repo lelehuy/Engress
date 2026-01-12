@@ -34,6 +34,10 @@ export function GetAppState() {
   return window['go']['main']['App']['GetAppState']();
 }
 
+export function GetAppVersion() {
+  return window['go']['main']['App']['GetAppVersion']();
+}
+
 export function GetConsistencyPhase() {
   return window['go']['main']['App']['GetConsistencyPhase']();
 }
