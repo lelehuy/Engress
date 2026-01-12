@@ -55,11 +55,14 @@ const Notebook = ({ initialTab = 'sessions', initialSearch = '', initialId = nul
         if (!selectedItem) return;
 
         try {
-            const confirmName = selectedItem.type === 'vocab' ? `the vocabulary word "${selectedItem.word}"` : "this session log";
+            const isVocab = selectedItem.type === 'vocab' || (!selectedItem.module && selectedItem.word);
+            const confirmName = isVocab ? `the vocabulary word "${selectedItem.word}"` : "this session log";
             const confirm = window.confirm(`Are you absolutely sure you want to erase ${confirmName}? This action is permanent and will affect your analytics.`);
             if (!confirm) return;
 
-            if (selectedItem.type === 'vocab' || (!selectedItem.module && selectedItem.word)) {
+            console.log("Attempting to delete ID:", selectedItem.id, "Type:", isVocab ? "Vocab" : "Log");
+
+            if (isVocab) {
                 await DeleteVocabulary(selectedItem.id);
             } else {
                 if (selectedItem.id) {
@@ -256,7 +259,7 @@ const Notebook = ({ initialTab = 'sessions', initialSearch = '', initialId = nul
                                         return (
                                             <button
                                                 key={i}
-                                                onClick={() => { setSelectedItem(log); setShowDetail(true); }}
+                                                onClick={() => { setSelectedItem({ ...log, type: 'session' }); setShowDetail(true); }}
                                                 className={`w-full glass p-4 sm:p-5 rounded-3xl text-left transition-all border group ${selectedItem?.id === log.id ? 'bg-white/10 border-indigo-500/30' : 'border-transparent hover:bg-white/5'}`}
                                             >
                                                 <div className="flex justify-between items-start mb-2">

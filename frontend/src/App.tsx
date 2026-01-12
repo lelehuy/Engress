@@ -407,6 +407,8 @@ function App() {
                                             // 3. Auto-collapse sidebar
                                             if (data.isActive && !prev.isActive) {
                                                 setSidebarCollapsed(true);
+                                                // Reset backend pause state when starting/resuming
+                                                SetPauseState(false);
                                             }
 
                                             return {
