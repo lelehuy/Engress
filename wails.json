@@ -8,5 +8,10 @@
   "frontend:dev:serverUrl": "auto",
   "author": {
     "name": "lelehuy"
+  },
+  "info": {
+    "productVersion": "0.0.4",
+    "productName": "Engress",
+    "copyright": "Copyright 2026 lelehuy"
   }
 }

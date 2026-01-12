@@ -467,7 +467,7 @@ func (a *App) UpdateTrayTime(timeStr string) {
 
 // GetAppVersion returns the current application version
 func (a *App) GetAppVersion() string {
-	return "v0.0.2"
+	return "v0.0.4"
 }
 
 type UpdateInfo struct {
@@ -522,7 +522,7 @@ func (a *App) CheckUpdate() UpdateInfo {
 	return info
 }
 
-// DownloadUpdate downloads the installer and opens it
+// DownloadUpdate downloads the installer and performs a direct installation if possible
 func (a *App) DownloadUpdate(url string, version string) string {
 	if url == "" {
 		return "Download URL is invalid."
@@ -551,10 +551,27 @@ func (a *App) DownloadUpdate(url string, version string) string {
 		return "Failed to save installer."
 	}
 
-	// Open DMG
-	cmd := exec.Command("open", filePath)
-	if err := cmd.Start(); err != nil {
-		return "Could not launch installer."
+	// Direct Install Attempt
+	mountPoint := fmt.Sprintf("%s/engress_update", tmpDir)
+	os.MkdirAll(mountPoint, 0755)
+
+	// 1. Mount DMG
+	exec.Command("hdiutil", "attach", filePath, "-mountpoint", mountPoint, "-nobrowse", "-quiet").Run()
+
+	// 3. Perform Copy
+	// We use rsync here because it's better at handling existing directories and showing failures
+	copyCmd := exec.Command("rsync", "-a", "--delete", fmt.Sprintf("%s/Engress.app", mountPoint), "/Applications/")
+	err = copyCmd.Run()
+
+	// 4. Detach
+	exec.Command("hdiutil", "detach", mountPoint, "-quiet").Run()
+	os.RemoveAll(mountPoint)
+
+	if err != nil {
+		fmt.Printf("Direct install failed: %v\n", err)
+		// Fallback to opening DMG if automated copy failed (e.g. permissions)
+		exec.Command("open", filePath).Start()
+		return "Manual Action Required: Copy Engress to Applications."
 	}
 
 	return "Success"

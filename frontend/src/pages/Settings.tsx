@@ -67,9 +67,13 @@ const Settings = ({ onRefresh }: { onRefresh?: () => void }) => {
     const handleDownloadUpdate = async () => {
         if (!updateStatus?.url) return;
         setDownloading(true);
-        await DownloadUpdate(updateStatus.url, updateStatus.version);
+        const result = await DownloadUpdate(updateStatus.url, updateStatus.version);
         setDownloading(false);
-        setUpdateStatus({ available: false, msg: "Installer Launched" });
+        if (result === "Success") {
+            setUpdateStatus({ available: false, msg: "Update Installed. Please Restart App." });
+        } else {
+            setUpdateStatus({ available: false, msg: result });
+        }
     };
 
     const [testSent, setTestSent] = useState(false);
