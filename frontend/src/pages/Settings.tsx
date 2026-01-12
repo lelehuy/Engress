@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Settings as SettingsIcon, Calendar, Save, Zap, Bell, Lock, Clock, Shield, User } from 'lucide-react';
 import { GetAppState, UpdateTestDate, UpdateReminders, UpdateProfileName, GetAppVersion } from "../../wailsjs/go/main/App";
+import logoUniversal from '../assets/images/logo-universal.png';
 
 const Settings = () => {
     const [name, setName] = useState('');
@@ -162,7 +163,7 @@ const Settings = () => {
                         </div>
                         <div className="flex flex-col items-center text-center space-y-4 py-4">
                             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center p-3 border border-white/5 shadow-2xl">
-                                <img src="/src/assets/images/logo-universal.png" className="w-full h-full object-contain opacity-80" alt="Engress Logo" />
+                                <img src={logoUniversal} className="w-full h-full object-contain opacity-80" alt="Engress Logo" />
                             </div>
                             <div>
                                 <h4 className="text-xl font-black text-white italic uppercase tracking-tighter">Engress</h4>
