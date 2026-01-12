@@ -1,70 +1,77 @@
-# Engress
+# Engress | The Elite Exam Sentinel 🛡️
 
-Engress is a local-first, distraction-free companion app designed to help you prepare for IELTS/TOEFL exams. It combines focus timers, vocabulary tracking, and mission-style progress monitoring.
+**Engress** is a high-performance, local-first companion application for IELTS and TOEFL candidates. It transforms mundane study routines into high-stakes "missions," providing the focus mechanisms and psychological feedback needed to maintain long-term discipline.
 
-## Features
+Built for the **Candidate** who demands clarity, privacy, and zero-distraction execution.
 
-- **Sentinal Focus HUD**: A persistent desktop overlay to keep you on track.
-- **Local Vault**: Store vocabulary, notes, and session logs privately on your machine.
-- **Mission Analytics**: Track your consistency and progress with detailed metrics.
-- **Study Schedule**: Manage your daily study routine.
+---
 
-## Development
+## ⚡ Key Systems
 
-To run in live development mode:
+### 1. Sentinel HUD (Heads-Up Display)
+A futuristic desktop overlay that keeps your critical metrics visible while you work in other applications (browser, PDF readers, etc.).
+- **Focus Timer**: Real-time tracking of your active session.
+- **Floating Scratchpad**: A resizable, always-on-top taking notes area that stays with you during Listening and Speaking simulations.
 
+### 2. Focus Lab (Study Vault)
+Custom-built simulation environments for every skill:
+- **Writing Workspace**: Markdown-friendly essay engine with word count intensity tracking.
+- **Speaking Recorder**: Session-based audio capture and note-taking.
+- **Reading/Listening Calculators**: Instant band-score estimation based on raw input.
+- **Vocabulary Forge**: A dedicated system to capture and internalize new language patterns.
+
+### 3. Mission Analytics
+Turn raw data into strategic intelligence:
+- **Execution Pulse**: Track your neural gain over time.
+- **Strategic Roadmap**: Visualize your journey to the target score.
+- **Consistency Engine**: Real-time briefing on your study habits (Neglect, Slipping, or Stable Phases).
+
+### 4. Smart Scheduler & Reminders
+- Native macOS notifications when you drift from your target.
+- Strategic brief every morning to reset your standards.
+
+---
+
+## 🛠️ Technical Architecture
+
+- **Backend**: Go (Wails)
+- **Frontend**: React (Vite, TypeScript, TailwindCSS/Framer Motion)
+- **HUD Systems**: Swift (Native macOS Cocoa Panels)
+- **Storage**: Local-only SQLite/JSON for absolute privacy.
+
+---
+
+## 🚀 Development & Build
+
+### Prerequisites
+- Go 1.21+
+- Node.js & NPM
+- Xcode (for Swift HUD compilation)
+
+### Live Development
 ```bash
 wails dev
 ```
 
-## Build
-
-To build the application for macOS:
-
+### Universal Production Build (macOS)
 ```bash
-wails build -platform darwin/universal
-```
-
-Or use the helper script to create a DMG:
-
-```bash
+# Build universal binary and package into DMG
 ./package.sh
 ```
 
-## Updates & Versioning
+---
 
-Engress features a built-in update mechanism. The application automatically checks for new releases on GitHub.
-If a new version is found, users can download and launch the installer directly from the application settings.
+## 📦 Deployment Protocol
 
-### How to Release a New Version (For Developers)
+1. Bump version in `app.go` (`GetAppVersion`).
+2. Run `./package.sh` to generate the latest `Engress-Setup.dmg`.
+3. Create a GitHub Release with the tag matching the version (e.g., `v0.2.0`).
+4. Upload the DMG. The built-in Sentinel Update system will handle the rest.
 
-1.  **Bump Version in Code**:
-    Update the version string in `app.go`:
-    ```go
-    // app.go
-    func (a *App) GetAppVersion() string {
-        return "v0.0.X" // Change to new version
-    }
-    ```
+---
 
-2.  **Build the Project**:
-    Run the packaging script to create the `.dmg` installer:
-    ```bash
-    ./package.sh
-    ```
+## 🛡️ Privacy Standard
+Engress is **Private by Design**. Your essays, voice recordings, and progress data never leave your local machine.
 
-3.  **Commit and Tag**:
-    ```bash
-    git add .
-    git commit -m "Bump version to v0.0.X"
-    git push
-    ```
-
-4.  **Create GitHub Release**:
-    - Go to GitHub Repository > Releases > Draft a new release.
-    - Tag version: `v0.0.X` (Must match the code).
-    - Title: `Engress v0.0.X`.
-    - Upload the `Engress-Setup.dmg` file from your project folder.
-    - Publish Release.
-
-The application will now detect the update for all users.
+---
+*Developed for elite candidates by the Engress Protocol.*
