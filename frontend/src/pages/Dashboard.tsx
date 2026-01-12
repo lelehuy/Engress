@@ -173,12 +173,12 @@ const Dashboard = ({ onNavigate, activeSession }: {
             </div>
 
             {/* Bento Grid Layout */}
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 auto-rows-auto md:auto-rows-[200px]">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 auto-rows-auto lg:auto-rows-[200px]">
 
                 {/* Main Mission - Large Bento */}
                 <motion.div
                     whileHover={{ scale: 1.01 }}
-                    className={`col-span-12 md:col-span-8 md:row-span-2 relative overflow-hidden rounded-[2.5rem] sm:rounded-[3rem] border border-white/10 bg-gradient-to-br group transition-all duration-500 ${todayMinutes < DAILY_GOAL
+                    className={`col-span-12 lg:col-span-8 lg:row-span-2 relative overflow-hidden rounded-[2.5rem] sm:rounded-[3rem] border border-white/10 bg-gradient-to-br group transition-all duration-500 ${todayMinutes < DAILY_GOAL
                         ? 'from-red-900/40 to-black border-red-500/20 shadow-2xl shadow-red-500/10'
                         : 'from-indigo-600/30 to-zinc-950 border-indigo-500/30 shadow-[0_0_40px_rgba(99,102,241,0.1)]'}`}
                 >
@@ -233,7 +233,7 @@ const Dashboard = ({ onNavigate, activeSession }: {
                 {/* Tomorrow's Mission - Small Bento */}
                 <motion.div
                     whileHover={{ y: -4 }}
-                    className="col-span-12 md:col-span-4 glass rounded-[2.5rem] sm:rounded-[3rem] p-6 sm:p-8 flex flex-col justify-between border-indigo-500/20 bg-indigo-500/5 shadow-2xl shadow-indigo-500/10 min-h-[150px] md:min-h-0"
+                    className="col-span-12 lg:col-span-4 glass rounded-[2.5rem] sm:rounded-[3rem] p-6 sm:p-8 flex flex-col justify-between border-indigo-500/20 bg-indigo-500/5 shadow-2xl shadow-indigo-500/10 min-h-[150px] lg:min-h-0"
                 >
                     <div className="space-y-4">
                         <div className="flex justify-between items-start">
@@ -255,7 +255,7 @@ const Dashboard = ({ onNavigate, activeSession }: {
                 {/* Study Time Check - Radial Progress Bento */}
                 <motion.div
                     whileHover={{ y: -4 }}
-                    className={`col-span-12 md:col-span-4 glass rounded-[2.5rem] sm:rounded-[3rem] p-8 flex flex-col justify-between items-center relative overflow-hidden ${todayMinutes < DAILY_GOAL ? 'border-red-500/20 bg-red-500/5' : 'bg-emerald-500/5 border-emerald-500/10'} min-h-[300px] md:min-h-0`}
+                    className={`col-span-12 lg:col-span-4 glass rounded-[2.5rem] sm:rounded-[3rem] p-8 flex flex-col justify-between items-center relative overflow-hidden ${todayMinutes < DAILY_GOAL ? 'border-red-500/20 bg-red-500/5' : 'bg-emerald-500/5 border-emerald-500/10'} min-h-[300px] lg:min-h-0`}
                 >
                     <div className="w-full flex justify-between items-start mb-4">
                         <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${todayMinutes < DAILY_GOAL ? 'text-indigo-400' : 'text-emerald-500'}`}>
