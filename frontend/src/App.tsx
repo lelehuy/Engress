@@ -144,11 +144,24 @@ function App() {
         // 2. BACKGROUND DATA EXTRACTION & SAVE
         let content = "";
         if (category === 'writing') {
+            const essays = sessionData?.submittedEssays || [];
+
+            const findTask = (type: string, activeData: any) => {
+                const submitted = essays.find((e: any) => e.type === type);
+                return {
+                    text: submitted?.content || activeData?.text || '',
+                    premise: submitted?.title || activeData?.premise || '',
+                    sourceUrl: submitted?.sourceUrl || activeData?.sourceUrl || '',
+                    screenshot: submitted?.screenshot || activeData?.screenshot || '',
+                    notes: submitted?.notes || activeData?.notes || ''
+                };
+            };
+
             const writingData = {
                 type: 'writing_v2',
-                submittedEssays: sessionData?.submittedEssays || [],
-                task1: sessionData?.task1Data || null,
-                task2: sessionData?.task2Data || null
+                submittedEssays: essays,
+                task1: findTask('TASK1', sessionData?.task1Data),
+                task2: findTask('TASK2', sessionData?.task2Data)
             };
             content = JSON.stringify(writingData);
         } else if (category === 'vocabulary') {

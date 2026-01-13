@@ -148,10 +148,13 @@ const Writing = ({ onBack, onFinish, initialData, onUpdate }: {
                                 setSubmittedEssays(prev => [...prev, {
                                     title: activeData.premise || 'Untitled Essay',
                                     content: activeData.text,
-                                    type: taskType.toUpperCase()
+                                    type: taskType.toUpperCase(),
+                                    sourceUrl: activeData.sourceUrl,
+                                    screenshot: activeData.screenshot,
+                                    notes: activeData.notes
                                 }]);
-                                // Reset current task data
-                                updateActiveData({ text: '', premise: '', screenshot: '', sourceUrl: '' });
+                                // Reset only content, keep context for possible revisions or reference
+                                updateActiveData({ text: '', premise: '' });
                                 setIsSubmitting(false);
                             }, 800);
                         }}
@@ -190,7 +193,9 @@ const Writing = ({ onBack, onFinish, initialData, onUpdate }: {
                             </div>
                             <div className="space-y-4">
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-bold text-zinc-600 uppercase ml-2">Source URL</label>
+                                    <label className="text-[10px] font-bold text-zinc-600 uppercase ml-2">
+                                        {taskType === 'task1' ? 'Task 1' : 'Task 2'} Source URL
+                                    </label>
                                     <div className="relative group">
                                         <ExternalLink className="absolute left-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-600 group-focus-within:text-emerald-500 transition-colors" />
                                         <input
@@ -203,7 +208,9 @@ const Writing = ({ onBack, onFinish, initialData, onUpdate }: {
                                 </div>
                                 <div className="space-y-2">
                                     <div className="flex items-center justify-between ml-2">
-                                        <label className="text-[10px] font-bold text-zinc-600 uppercase">Visual Material</label>
+                                        <label className="text-[10px] font-bold text-zinc-600 uppercase">
+                                            {taskType === 'task1' ? 'Task 1' : 'Task 2'} Visual Material
+                                        </label>
                                         <button
                                             onClick={async () => {
                                                 try {
