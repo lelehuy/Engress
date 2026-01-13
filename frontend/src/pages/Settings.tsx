@@ -107,7 +107,7 @@ const Settings = ({ onRefresh }: { onRefresh?: () => void }) => {
                 {/* Column 1: Core Config */}
                 <div className="space-y-8">
                     {/* Mission Profile Card */}
-                    <div className="glass p-8 sm:p-10 rounded-[2.5rem] sm:rounded-[4rem] space-y-8 border-indigo-500/10">
+                    <div className="glass p-8 sm:p-10 rounded-[2.5rem] sm:rounded-[4rem] space-y-8 border-indigo-500/10 relative z-20">
                         <div className="flex items-center gap-4">
                             <div className="p-3 bg-indigo-500/10 rounded-2xl border border-indigo-500/20">
                                 <Shield className="w-5 h-5 text-indigo-400" />
