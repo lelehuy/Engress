@@ -146,14 +146,16 @@ function App() {
         if (category === 'writing') {
             const essays = sessionData?.submittedEssays || [];
 
-            const findTask = (type: string, activeData: any) => {
-                const submitted = essays.find((e: any) => e.type === type);
+            const findTask = (type: string, liveData: any) => {
+                // Find the latest submitted draft for this task
+                const submitted = [...essays].reverse().find((e: any) => e.type?.toUpperCase() === type.toUpperCase());
                 return {
-                    text: submitted?.content || activeData?.text || '',
-                    premise: submitted?.title || activeData?.premise || '',
-                    sourceUrl: submitted?.sourceUrl || activeData?.sourceUrl || '',
-                    screenshot: submitted?.screenshot || activeData?.screenshot || '',
-                    notes: submitted?.notes || activeData?.notes || ''
+                    text: submitted?.content || liveData?.text || '',
+                    premise: submitted?.title || liveData?.premise || '',
+                    sourceUrl: submitted?.sourceUrl || liveData?.sourceUrl || '',
+                    screenshot: submitted?.screenshot || liveData?.screenshot || '',
+                    // Always prefer live notes if they exist, as they are likely more up-to-date than a submitted draft's notes
+                    notes: liveData?.notes || submitted?.notes || ''
                 };
             };
 

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Calendar as CalendarIcon, Clock, ChevronRight, Book, Lightbulb, X, Image as ImageIcon, ExternalLink, ChevronLeft, PenTool, Mic, BookOpen, Headphones, Trophy, Zap, Trash2 } from 'lucide-react';
 import { GetAppState, DeleteLog, DeleteVocabulary, Notify } from "../../wailsjs/go/main/App";
+import { BrowserOpenURL } from '../../wailsjs/runtime/runtime';
 import EngressCalendar from '../components/EngressCalendar';
 import { getCategoryColorClass } from '../utils/categoryColors';
 
@@ -18,6 +19,16 @@ const Notebook = ({ initialTab = 'sessions', initialSearch = '', initialId = nul
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
     const [dateRange, setDateRange] = useState<{ start: string; end: string }>({ start: '', end: '' });
     const [activeWritingTask, setActiveWritingTask] = useState<'task1' | 'task2'>('task1');
+    const [previewImage, setPreviewImage] = useState<string | null>(null);
+
+    const handleUrlClick = (url: string, e: React.MouseEvent) => {
+        e.preventDefault();
+        let finalUrl = url;
+        if (!/^https?:\/\//i.test(url)) {
+            finalUrl = 'https://' + url;
+        }
+        BrowserOpenURL(finalUrl);
+    };
 
     const getWritingData = (item: any) => {
         if (!item || (item.module || '').toLowerCase() !== 'writing') return null;
@@ -583,15 +594,13 @@ const Notebook = ({ initialTab = 'sessions', initialSearch = '', initialId = nul
                                             {selectedItem.source_url && (
                                                 <div className="p-6 bg-emerald-500/5 rounded-2xl border border-emerald-500/10 space-y-3">
                                                     <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Source Material</p>
-                                                    <a
-                                                        href={selectedItem.source_url}
-                                                        target="_blank"
-                                                        rel="noreferrer"
-                                                        className="flex items-center gap-2 text-white hover:text-emerald-400 transition-colors group"
+                                                    <button
+                                                        onClick={(e) => handleUrlClick(selectedItem.source_url, e)}
+                                                        className="flex items-center gap-2 text-white hover:text-emerald-400 transition-colors group text-left w-full"
                                                     >
                                                         <span className="text-sm font-medium truncate flex-1 underline decoration-emerald-500/30">{selectedItem.source_url}</span>
                                                         <ExternalLink className="w-4 h-4 shrink-0" />
-                                                    </a>
+                                                    </button>
                                                 </div>
                                             )}
                                             {selectedItem.screenshot && (
@@ -601,7 +610,7 @@ const Notebook = ({ initialTab = 'sessions', initialSearch = '', initialId = nul
                                                         src={selectedItem.screenshot}
                                                         className="w-full h-auto rounded-xl border border-white/10 group-hover:scale-105 transition-transform duration-700 cursor-zoom-in"
                                                         alt="Session screenshot"
-                                                        onClick={() => window.open(selectedItem.screenshot, '_blank')}
+                                                        onClick={() => setPreviewImage(selectedItem.screenshot)}
                                                     />
                                                 </div>
                                             )}
@@ -652,10 +661,13 @@ const Notebook = ({ initialTab = 'sessions', initialSearch = '', initialId = nul
                                                                 {task.sourceUrl && (
                                                                     <div className="p-4 bg-emerald-500/5 rounded-xl border border-emerald-500/10 space-y-2">
                                                                         <p className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Source Material</p>
-                                                                        <a href={task.sourceUrl} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-zinc-300 hover:text-white transition-colors truncate">
+                                                                        <button
+                                                                            onClick={(e) => handleUrlClick(task.sourceUrl, e)}
+                                                                            className="flex items-center gap-2 text-zinc-300 hover:text-white transition-colors truncate w-full text-left"
+                                                                        >
                                                                             <span className="text-xs truncate underline">{task.sourceUrl}</span>
                                                                             <ExternalLink className="w-3 h-3" />
-                                                                        </a>
+                                                                        </button>
                                                                     </div>
                                                                 )}
                                                                 {task.screenshot && (
@@ -665,24 +677,34 @@ const Notebook = ({ initialTab = 'sessions', initialSearch = '', initialId = nul
                                                                             src={task.screenshot}
                                                                             className="w-full h-auto max-h-60 object-contain rounded-lg border border-white/5 cursor-zoom-in hover:scale-105 transition-transform duration-700"
                                                                             alt="Task material"
-                                                                            onClick={() => window.open(task.screenshot, '_blank')}
+                                                                            onClick={() => setPreviewImage(task.screenshot)}
                                                                         />
                                                                     </div>
                                                                 )}
                                                             </div>
                                                         )}
 
-                                                        <div className="space-y-4">
-                                                            <h4 className="text-xl font-black italic text-white uppercase tracking-tighter">
-                                                                {task?.premise || (activeWritingTask === 'task1' ? "Analysis Report" : "Opinion Piece")}
-                                                            </h4>
-                                                            <p className="text-zinc-300 leading-relaxed whitespace-pre-wrap font-serif text-base sm:text-lg">
-                                                                {task?.text || "No draft content was recorded for this task."}
-                                                            </p>
+                                                        <div className="space-y-6">
+                                                            <div className="space-y-4">
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="w-1.5 h-6 bg-indigo-500 rounded-full" />
+                                                                    <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Evaluated Content</p>
+                                                                </div>
+                                                                <h4 className="text-xl font-black italic text-white uppercase tracking-tighter ml-4">
+                                                                    {task?.premise || (activeWritingTask === 'task1' ? "Analysis Report" : "Opinion Piece")}
+                                                                </h4>
+                                                                <p className="text-zinc-300 leading-relaxed whitespace-pre-wrap font-serif text-base sm:text-lg ml-4 bg-white/[0.02] p-6 rounded-2xl border border-white/5 shadow-inner">
+                                                                    {task?.text || "No draft content was recorded for this task."}
+                                                                </p>
+                                                            </div>
+
                                                             {task?.notes && (
-                                                                <div className="mt-8 pt-6 border-t border-white/5">
-                                                                    <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-3">Scratchpad Notes</p>
-                                                                    <p className="text-sm text-zinc-500 italic leading-relaxed">
+                                                                <div className="mt-8 pt-8 border-t border-white/10 space-y-4 bg-zinc-950/30 p-6 rounded-[2rem]">
+                                                                    <div className="flex items-center gap-3">
+                                                                        <Lightbulb className="w-3.5 h-3.5 text-zinc-600" />
+                                                                        <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Brainstorming & Scratchpad</p>
+                                                                    </div>
+                                                                    <p className="text-sm text-zinc-500 italic leading-relaxed font-medium">
                                                                         {task.notes}
                                                                     </p>
                                                                 </div>
@@ -753,6 +775,38 @@ const Notebook = ({ initialTab = 'sessions', initialSearch = '', initialId = nul
                     </div>
                 )}
             </div>
+
+            <AnimatePresence>
+                {previewImage && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setPreviewImage(null)}
+                        className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex flex-col items-center justify-center p-4 sm:p-12 cursor-zoom-out"
+                    >
+                        <button
+                            onClick={() => setPreviewImage(null)}
+                            className="absolute top-8 right-8 p-4 bg-white/5 hover:bg-white/10 rounded-full border border-white/10 text-white transition-all hover:scale-110 active:scale-90"
+                        >
+                            <X className="w-6 h-6" />
+                        </button>
+
+                        <div className="w-full h-full flex items-center justify-center max-w-7xl mx-auto" onClick={(e) => e.stopPropagation()}>
+                            <img
+                                src={previewImage}
+                                alt="Material Preview"
+                                className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl border border-white/10 animate-in zoom-in-95 duration-300"
+                            />
+                        </div>
+
+                        <div className="mt-8 flex items-center gap-4 bg-zinc-900/50 px-6 py-3 rounded-full border border-white/5">
+                            <ImageIcon className="w-4 h-4 text-zinc-500" />
+                            <span className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Material Inspection View</span>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };
