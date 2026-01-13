@@ -17,6 +17,7 @@ const Notebook = ({ initialTab = 'sessions', initialSearch = '', initialId = nul
     const [sessionLogs, setSessionLogs] = useState<any[]>([]);
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
     const [dateRange, setDateRange] = useState<{ start: string; end: string }>({ start: '', end: '' });
+    const [activeWritingTask, setActiveWritingTask] = useState<'task1' | 'task2'>('task1');
 
     const fetchData = async () => {
         const state = await GetAppState();
@@ -452,8 +453,15 @@ const Notebook = ({ initialTab = 'sessions', initialSearch = '', initialId = nul
                                                 try {
                                                     // Writing mode: Title is often in content "TITLE: ..."
                                                     if (selectedItem.module?.toLowerCase() === 'writing') {
-                                                        const match = selectedItem.content.match(/TITLE: (.*?)(\n|$)/);
-                                                        return match ? match[1] : "Writing Session";
+                                                        try {
+                                                            const data = JSON.parse(selectedItem.content);
+                                                            if (data.type === 'writing_v2') {
+                                                                return data.task1?.premise || data.task2?.premise || (data.submittedEssays?.[0]?.title) || "Writing Session";
+                                                            }
+                                                        } catch (e) {
+                                                            const match = selectedItem.content.match(/TITLE: (.*?)(\n|$)/);
+                                                            return match ? match[1] : "Writing Session";
+                                                        }
                                                     }
                                                     // Speaking mode: JSON
                                                     if (selectedItem.module?.toLowerCase() === 'speaking') {
@@ -541,7 +549,7 @@ const Notebook = ({ initialTab = 'sessions', initialSearch = '', initialId = nul
                                     </div>
                                 </div>
 
-                                {(selectedItem.source_url || selectedItem.screenshot) && (
+                                {(selectedItem.source_url || selectedItem.screenshot) && !selectedItem.content?.includes('writing_v2') && (
                                     <div className="space-y-6 pt-8 border-t border-white/5">
                                         <h3 className="text-sm font-bold text-emerald-400 uppercase tracking-widest flex items-center gap-2">
                                             <ImageIcon className="w-4 h-4" /> Session Context
@@ -591,17 +599,89 @@ const Notebook = ({ initialTab = 'sessions', initialSearch = '', initialId = nul
                                     <h3 className="text-sm font-bold text-indigo-400 uppercase tracking-widest flex items-center gap-2">
                                         <Book className="w-4 h-4" /> Work Content / Archive
                                     </h3>
-                                    <div className="bg-zinc-900/80 rounded-2xl sm:rounded-3xl p-6 sm:p-10 border border-white/10 min-h-[200px] flex items-center justify-center">
-                                        <p className={`text-zinc-300 leading-relaxed whitespace-pre-wrap font-serif break-words ${selectedItem.content ? 'text-base sm:text-lg w-full text-left' : 'text-sm italic opacity-30'}`}>
-                                            {selectedItem.module?.toLowerCase() === 'speaking' && selectedItem.content ? (
-                                                (() => {
-                                                    try {
-                                                        const data = JSON.parse(selectedItem.content);
-                                                        return data.notes || "No scratchpad notes were recorded for this session.";
-                                                    } catch (e) { return selectedItem.content; }
-                                                })()
-                                            ) : (selectedItem.content || "No work content was archived during this session. Ensure you submit drafts or forge vocabulary entries to see them here.")}
-                                        </p>
+                                    <div className="bg-zinc-900/80 rounded-2xl sm:rounded-3xl p-6 sm:p-10 border border-white/10 min-h-[200px] flex flex-col items-center justify-center">
+                                        {selectedItem.module?.toLowerCase() === 'writing' && (() => {
+                                            try {
+                                                const data = JSON.parse(selectedItem.content);
+                                                if (data.type === 'writing_v2') {
+                                                    const task = activeWritingTask === 'task1' ? data.task1 : data.task2;
+                                                    return (
+                                                        <div className="w-full space-y-8">
+                                                            <div className="flex bg-zinc-950 border border-white/5 rounded-2xl p-1.5 w-fit">
+                                                                <button
+                                                                    onClick={() => setActiveWritingTask('task1')}
+                                                                    className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeWritingTask === 'task1' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-zinc-600 hover:text-zinc-300'}`}
+                                                                >
+                                                                    Task 1
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => setActiveWritingTask('task2')}
+                                                                    className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeWritingTask === 'task2' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-zinc-600 hover:text-zinc-300'}`}
+                                                                >
+                                                                    Task 2
+                                                                </button>
+                                                            </div>
+
+                                                            {/* Per-Task Visual & URL */}
+                                                            {(task?.sourceUrl || task?.screenshot) && (
+                                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-8 border-b border-white/10">
+                                                                    {task.sourceUrl && (
+                                                                        <div className="p-4 bg-emerald-500/5 rounded-xl border border-emerald-500/10 space-y-2">
+                                                                            <p className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Source Material</p>
+                                                                            <a href={task.sourceUrl} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-zinc-300 hover:text-white transition-colors truncate">
+                                                                                <span className="text-xs truncate underline">{task.sourceUrl}</span>
+                                                                                <ExternalLink className="w-3 h-3" />
+                                                                            </a>
+                                                                        </div>
+                                                                    )}
+                                                                    {task.screenshot && (
+                                                                        <div className="p-3 bg-zinc-950 rounded-xl border border-white/5 group relative">
+                                                                            <img
+                                                                                src={task.screenshot}
+                                                                                className="w-full h-auto max-h-40 object-contain rounded-lg border border-white/5 cursor-zoom-in"
+                                                                                alt="Task material"
+                                                                                onClick={() => window.open(task.screenshot, '_blank')}
+                                                                            />
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            )}
+
+                                                            <div className="space-y-4">
+                                                                <h4 className="text-xl font-black italic text-white uppercase tracking-tighter">
+                                                                    {task?.premise || (activeWritingTask === 'task1' ? "Analysis Report" : "Opinion Piece")}
+                                                                </h4>
+                                                                <p className="text-zinc-300 leading-relaxed whitespace-pre-wrap font-serif text-base sm:text-lg">
+                                                                    {task?.text || "No draft content was recorded for this task."}
+                                                                </p>
+                                                                {task?.notes && (
+                                                                    <div className="mt-8 pt-6 border-t border-white/5">
+                                                                        <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-3">Scratchpad Notes</p>
+                                                                        <p className="text-sm text-zinc-500 italic leading-relaxed">
+                                                                            {task.notes}
+                                                                        </p>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                }
+                                            } catch (e) { }
+                                            return null;
+                                        })()}
+
+                                        {(selectedItem.module?.toLowerCase() !== 'writing' || !selectedItem.content?.includes('writing_v2')) && (
+                                            <p className={`text-zinc-300 leading-relaxed whitespace-pre-wrap font-serif break-words ${selectedItem.content ? 'text-base sm:text-lg w-full text-left' : 'text-sm italic opacity-30'}`}>
+                                                {selectedItem.module?.toLowerCase() === 'speaking' && selectedItem.content ? (
+                                                    (() => {
+                                                        try {
+                                                            const data = JSON.parse(selectedItem.content);
+                                                            return data.notes || "No scratchpad notes were recorded for this session.";
+                                                        } catch (e) { return selectedItem.content; }
+                                                    })()
+                                                ) : (selectedItem.content || "No work content was archived during this session. Ensure you submit drafts or forge vocabulary entries to see them here.")}
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
                                 <div className="space-y-6 pt-12 border-t border-white/5 opacity-50 hover:opacity-100 transition-opacity">

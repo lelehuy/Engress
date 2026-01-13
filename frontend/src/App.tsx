@@ -144,24 +144,13 @@ function App() {
         // 2. BACKGROUND DATA EXTRACTION & SAVE
         let content = "";
         if (category === 'writing') {
-            const essays = sessionData?.submittedEssays || [];
-            content = essays.map((e: any) => `TITLE: ${e.title}\n${e.content}`).join('\n\n---\n\n');
-
-            // Log Unfinished Task 1
-            if (sessionData?.task1Data?.text && !content.includes(sessionData.task1Data.text)) {
-                content += content ? '\n\n---\n\n' : '';
-                content += `UNFINISHED TASK 1:\nPREMISE: ${sessionData.task1Data.premise || 'N/A'}\n${sessionData.task1Data.text}`;
-            }
-            // Log Unfinished Task 2
-            if (sessionData?.task2Data?.text && !content.includes(sessionData.task2Data.text)) {
-                content += content ? '\n\n---\n\n' : '';
-                content += `UNFINISHED TASK 2:\nPREMISE: ${sessionData.task2Data.premise || 'N/A'}\n${sessionData.task2Data.text}`;
-            }
-            // Fallback for old data format
-            if (sessionData?.text && !sessionData?.task1Data && !sessionData?.task2Data && !content.includes(sessionData.text)) {
-                content += content ? '\n\n---\n\n' : '';
-                content += `UNFINISHED DRAFT:\n${sessionData.text}`;
-            }
+            const writingData = {
+                type: 'writing_v2',
+                submittedEssays: sessionData?.submittedEssays || [],
+                task1: sessionData?.task1Data || null,
+                task2: sessionData?.task2Data || null
+            };
+            content = JSON.stringify(writingData);
         } else if (category === 'vocabulary') {
             const state = await GetAppState();
             const today = getLocalDateString();
@@ -186,8 +175,8 @@ function App() {
             duration,
             "", // learnings
             content,
-            sessionData?.sourceUrl || "",
-            sessionData?.screenshot || ""
+            sessionData?.sourceUrl || sessionData?.task1Data?.sourceUrl || sessionData?.task2Data?.sourceUrl || "",
+            sessionData?.screenshot || sessionData?.task1Data?.screenshot || sessionData?.task2Data?.screenshot || ""
         );
 
         // Update Summary view with the final extracted content
