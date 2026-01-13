@@ -22,6 +22,9 @@ const Mockup = ({ onBack, onFinish, initialData, onUpdate }: {
     }, [step, duration, scores, notes, onUpdate]);
 
     useEffect(() => {
+        // Initially hide HUD scratchpad when Engress is active/focused
+        SetHUDScratchpadVisible(false);
+
         const handleBlur = () => {
             SetHUDScratchpadVisible(true);
         };

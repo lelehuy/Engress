@@ -240,7 +240,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             let isHidden = trimmed.isEmpty || 
                            upperTrimmed == "HIDDEN" || 
                            upperTrimmed == "HIDE" ||
-                           (parts.count > 0 && (parts[0].trimmingCharacters(in: .whitespacesAndNewlines).uppercased() == "HIDDEN" || parts[0].trimmingCharacters(in: .whitespacesAndNewlines).uppercased() == "HIDE"))
+                           upperTrimmed == "---" ||
+                           (parts.count > 0 && (parts[0].trimmingCharacters(in: .whitespacesAndNewlines).uppercased() == "HIDDEN" || 
+                                              parts[0].trimmingCharacters(in: .whitespacesAndNewlines).uppercased() == "---")) ||
+                           (parts.count > 1 && parts[1].trimmingCharacters(in: .whitespacesAndNewlines).uppercased() == "HIDDEN")
             
             if isHidden {
                 timerWindow?.alphaValue = 0.0
@@ -250,7 +253,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 return
             }
             
+            // Ensure timer window is visible and on top
             timerWindow?.setIsVisible(true)
+            timerWindow?.level = .mainMenu + 1
+            timerWindow?.orderFrontRegardless()
             timerWindow?.alphaValue = 1.0
             timerLabel?.stringValue = parts[0]
             
@@ -262,6 +268,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 let scratchVisible = parts[2] == "1"
                 if scratchVisible {
                     scratchWindow?.setIsVisible(true)
+                    scratchWindow?.level = .mainMenu + 1
                     scratchWindow?.orderFrontRegardless()
                     scratchWindow?.alphaValue = 1.0
                     scratchWindow?.updateContent(from: notesAppPath)

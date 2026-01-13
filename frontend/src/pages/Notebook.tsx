@@ -168,7 +168,6 @@ const Notebook = ({ initialTab = 'sessions', initialSearch = '', initialId = nul
         { id: 'reading', name: 'Reading', icon: BookOpen, color: 'text-blue-400', bg: 'bg-blue-400/10' },
         { id: 'listening', name: 'Listening', icon: Headphones, color: 'text-amber-400', bg: 'bg-amber-400/10' },
         { id: 'mockup', name: 'Mock Simulation', icon: Trophy, color: 'text-white', bg: 'bg-indigo-600/20' },
-        { id: 'general', name: 'General / Other', icon: Zap, color: 'text-zinc-400', bg: 'bg-zinc-400/10' },
     ];
 
     const filteredVocab = vocabList.filter(item => {

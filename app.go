@@ -218,7 +218,11 @@ func (a *App) startHUDCommandListener() {
 
 func (a *App) SetSessionCategory(category string) {
 	a.currentCategory = category
-	a.UpdateTrayTime(a.currentTimeStr)
+	if a.currentTimeStr == "HIDDEN" || a.currentTimeStr == "" {
+		a.UpdateTrayTime("---") // Placeholder to avoid 'HIDDEN' word if timer hasn't started
+	} else {
+		a.UpdateTrayTime(a.currentTimeStr)
+	}
 }
 
 func (a *App) GetConsistencyPhase() string {
@@ -516,7 +520,11 @@ func (a *App) UpdateTrayTime(timeStr string) {
 	}
 
 	upperTime := strings.ToUpper(timeStr)
-	if a.isPaused || timeStr == "" || upperTime == "HIDDEN" || upperTime == "HIDE" {
+	upperCat := strings.ToUpper(a.currentCategory)
+
+	// If any part of the state says HIDDEN or HIDE, or if time is empty
+	// We send a single "HIDDEN" command so the Swift HUD knows to go alpha 0
+	if a.isPaused || timeStr == "" || upperTime == "HIDDEN" || upperTime == "HIDE" || upperTime == "---" || upperCat == "HIDDEN" || upperCat == "" {
 		os.WriteFile("/tmp/sentinel_timer.txt", []byte("HIDDEN"), 0644)
 	} else {
 		content := fmt.Sprintf("%s|%s|%s", timeStr, a.currentCategory, scratchVisible)

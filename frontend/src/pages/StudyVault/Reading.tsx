@@ -48,6 +48,9 @@ const Reading = ({ onBack, onFinish, category, initialData, onUpdate }: {
     }, [duration, rawScore, sourceUrl, screenshot, examMode, notes]); // Removed onUpdate to break the render loop
 
     useEffect(() => {
+        // Initially hide HUD scratchpad when Engress is active/focused
+        SetHUDScratchpadVisible(false);
+
         const handleBlur = () => {
             SetHUDScratchpadVisible(true);
         };
@@ -66,6 +69,7 @@ const Reading = ({ onBack, onFinish, category, initialData, onUpdate }: {
             window.removeEventListener('blur', handleBlur);
             window.removeEventListener('focus', handleFocus);
             unlisten();
+            SetHUDScratchpadVisible(false);
             // App.tsx handles global HUD visibility based on activeSession.isActive
         };
     }, []);

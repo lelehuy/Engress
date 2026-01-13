@@ -332,7 +332,7 @@ function App() {
                     </button>
                 </div>
 
-                <header className={`flex items-center justify-between px-4 sm:px-8 z-20 transition-all ${activeSession.isActive && activeSession.category ? 'h-16 bg-zinc-950 border-b border-white/5' : 'h-20'}`}>
+                <header className={`flex items-center justify-between px-4 sm:px-8 transition-all ${activeSession.isActive && activeSession.category ? 'h-16 bg-zinc-950 border-b border-white/5' : 'h-20'}`}>
                     <div className="flex items-center gap-6">
                         {/* Mobile Logo */}
                         <div className="md:hidden w-8 h-8 shrink-0">
@@ -392,13 +392,13 @@ function App() {
                 </header>
 
                 {/* Content Area */}
-                <div className={`flex-1 ${currentPage === 'dashboard' ? 'overflow-hidden' : 'overflow-y-auto'} p-4 sm:p-8 pt-2 sm:pt-4 pb-20 md:pb-8`}>
+                <div className={`flex-1 overflow-y-auto p-4 sm:p-6 pt-2 sm:pt-2 pb-16 md:pb-4`}>
                     <AnimatePresence mode="wait">
                         <motion.div
                             key={currentPage}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -10 }}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
                             transition={{ duration: 0.2 }}
                             className="h-full"
                         >
