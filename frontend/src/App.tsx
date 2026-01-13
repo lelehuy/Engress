@@ -87,6 +87,9 @@ function App() {
     useEffect(() => {
         refreshAppState();
 
+        // Background sync to keep header and analytics updated globally
+        const syncInterval = setInterval(refreshAppState, 10000);
+
         const unlistenUrl = EventsOn("url-active", (url: string) => {
             setActiveUrl(url);
         });
@@ -98,6 +101,7 @@ function App() {
         });
 
         return () => {
+            clearInterval(syncInterval);
             unlistenUrl();
             unlistenStop();
         };
@@ -507,7 +511,14 @@ function App() {
                                     }}
                                 />
                             )}
-                            {currentPage === 'notebook' && <Notebook initialTab={notebookTab} initialSearch={notebookSearch} initialId={notebookItemId} />}
+                            {currentPage === 'notebook' && (
+                                <Notebook
+                                    initialTab={notebookTab}
+                                    initialId={notebookItemId}
+                                    initialSearch={notebookSearch}
+                                    onRefresh={refreshAppState}
+                                />
+                            )}
                             {currentPage === 'settings' && <Settings onRefresh={refreshAppState} />}
                             {currentPage !== 'dashboard' && currentPage !== 'vault' && currentPage !== 'analytics' && currentPage !== 'schedule' && currentPage !== 'notebook' && currentPage !== 'settings' && (
                                 <div className="flex flex-col items-center justify-center h-full text-zinc-600">
