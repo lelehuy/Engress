@@ -117,10 +117,9 @@ const Dashboard = ({ onNavigate, activeSession, testDateProps, daysLeftProps, to
                     <motion.h1
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
-                        className="text-4xl sm:text-5xl font-black tracking-tighter text-white italic uppercase flex items-baseline gap-4"
+                        className="text-4xl sm:text-5xl font-black tracking-tighter text-white italic uppercase flex items-baseline gap-3"
                     >
-                        PROTOCOL <span className="text-zinc-700 not-italic text-sm sm:text-lg">ACTIVE:</span>
-                        <span className="text-zinc-400">{userName || 'SENTINEL'}</span>
+                        Hello, <span className="text-white">{userName || 'SENTINEL'}</span>
                     </motion.h1>
                 </div>
                 <div className="grid grid-cols-2 sm:flex sm:gap-4 w-full sm:w-auto gap-3">
