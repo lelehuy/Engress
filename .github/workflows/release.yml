@@ -29,6 +29,7 @@ jobs:
 
       - name: Build & Package DMG
         run: |
+          export PATH=$PATH:$(go env GOPATH)/bin
           chmod +x package.sh
           ./package.sh
 

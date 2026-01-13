@@ -19,6 +19,13 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
+# Copy HUD helper if it exists
+if [ -f "engress_hud" ]; then
+    echo "📋 Copying HUD Helper to bundle..."
+    cp "engress_hud" "$BUILD_DIR/$APP_NAME.app/Contents/MacOS/"
+    chmod +x "$BUILD_DIR/$APP_NAME.app/Contents/MacOS/engress_hud"
+fi
+
 echo "📦 Packaging into DMG..."
 
 # 2. Preparation

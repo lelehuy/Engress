@@ -18,11 +18,10 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Go Tidy
-        run: go mod tidy
+      - name: Install Wails
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
 
-      - name: Frontend Build Check
+      - name: Build Check
         run: |
-          cd frontend
-          npm install
-          npm run build
+          export PATH=$PATH:$(go env GOPATH)/bin
+          wails build -platform darwin/universal -clean
