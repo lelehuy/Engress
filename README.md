@@ -1,77 +1,49 @@
 # Engress | The Elite Exam Sentinel 🛡️
 
-**Engress** is a high-performance, local-first companion application for IELTS and TOEFL candidates. It transforms mundane study routines into high-stakes "missions," providing the focus mechanisms and psychological feedback needed to maintain long-term discipline.
+**Transform your preparation into a mission. This is no longer just study; it is execution.**
 
-Built for the **Candidate** who demands clarity, privacy, and zero-distraction execution.
+Engress is your desktop command center for IELTS/TOEFL mastery. It combines high-performance tracking tools with a unique "Sentinel" HUD to ensure you maintain discipline, even when distractions surround you.
 
 ---
 
-## ⚡ Key Systems
+## ⚡ Mission Capabilities
 
 ### 1. Sentinel HUD (Heads-Up Display)
-A futuristic desktop overlay that keeps your critical metrics visible while you work in other applications (browser, PDF readers, etc.).
-- **Focus Timer**: Real-time tracking of your active session.
-- **Floating Scratchpad**: A resizable, always-on-top taking notes area that stays with you during Listening and Speaking simulations.
+Keep your mission visible. The HUD floats over your desktop, providing:
+- **Focus Timer**: Unavoidable accountability.
+- **Micro-Scratchpad**: Always-on-top notes for rapid capture during Listening/Reading.
 
-### 2. Focus Lab (Study Vault)
-Custom-built simulation environments for every skill:
-- **Writing Workspace**: Markdown-friendly essay engine with word count intensity tracking.
-- **Speaking Recorder**: Session-based audio capture and note-taking.
-- **Reading/Listening Calculators**: Instant band-score estimation based on raw input.
-- **Vocabulary Forge**: A dedicated system to capture and internalize new language patterns.
+### 2. Focus Lab
+Your training ground. Dedicated modules for every skill:
+- **Writing**: Distraction-free environment.
+- **Speaking**: Record, playback, and critique your own voice.
+- **Vocabulary**: "Forge" your lexicon. Capture words, define them, and master them.
 
-### 3. Mission Analytics
-Turn raw data into strategic intelligence:
-- **Execution Pulse**: Track your neural gain over time.
-- **Strategic Roadmap**: Visualize your journey to the target score.
-- **Consistency Engine**: Real-time briefing on your study habits (Neglect, Slipping, or Stable Phases).
+### 3. Battle Analytics
+Strategic intelligence for your progress:
+- **Consistency Engine**: The system detects if you are "Stable", "Slipping", or in "Neglect".
+- **Execution Pulse**: Visual heatmap of your daily discipline.
 
-### 4. Smart Scheduler & Reminders
-- Native macOS notifications when you drift from your target.
-- Strategic brief every morning to reset your standards.
+### 4. Smart Schedule
+- Native alerts when standards drop.
+- Daily tactical briefings based on your exam date.
 
 ---
 
-## 🛠️ Technical Architecture
+## 📥 Installation
 
-- **Backend**: Go (Wails)
-- **Frontend**: React (Vite, TypeScript, TailwindCSS/Framer Motion)
-- **HUD Systems**: Swift (Native macOS Cocoa Panels)
-- **Storage**: Local-only SQLite/JSON for absolute privacy.
-
----
-
-## 🚀 Development & Build
-
-### Prerequisites
-- Go 1.21+
-- Node.js & NPM
-- Xcode (for Swift HUD compilation)
-
-### Live Development
-```bash
-wails dev
-```
-
-### Universal Production Build (macOS)
-```bash
-# Build universal binary and package into DMG
-./package.sh
-```
+1. Download the latest `Engress-Setup.dmg` from the Releases page.
+2. Drag **Engress** to your Applications folder.
+3. Launch Engress.
+    - *Note: On first run, you may need to approve the app in System Settings > Privacy & Security.*
 
 ---
 
-## 📦 Deployment Protocol
-
-1. Bump version in `app.go` (`GetAppVersion`).
-2. Run `./package.sh` to generate the latest `Engress-Setup.dmg`.
-3. Create a GitHub Release with the tag matching the version (e.g., `v0.2.0`).
-4. Upload the DMG. The built-in Sentinel Update system will handle the rest.
+## 🛡️ Privacy Protocol
+Engress operates continuously on your local machine.
+- **0% Data Leak**: Your essays, recordings, and scores stay on your disk.
+- **Offline Capable**: No internet needed for core functionality.
 
 ---
 
-## 🛡️ Privacy Standard
-Engress is **Private by Design**. Your essays, voice recordings, and progress data never leave your local machine.
-
----
-*Developed for elite candidates by the Engress Protocol.*
+*Stay Disciplined. Trust the Protocol.*
