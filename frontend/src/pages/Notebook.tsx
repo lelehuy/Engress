@@ -1,13 +1,18 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Calendar as CalendarIcon, Clock, ChevronRight, Book, Lightbulb, X, Image as ImageIcon, ExternalLink, ChevronLeft, PenTool, Mic, BookOpen, Headphones, Trophy, Zap, Trash2 } from 'lucide-react';
-import { GetAppState, DeleteLog, DeleteVocabulary } from "../../wailsjs/go/main/App";
+import { GetAppState, DeleteLog, DeleteVocabulary, Notify } from "../../wailsjs/go/main/App";
+import EngressCalendar from '../components/EngressCalendar';
 import { getCategoryColorClass } from '../utils/categoryColors';
 
 const Notebook = ({ initialTab = 'sessions', initialSearch = '', initialId = null }: { initialTab?: 'vocabulary' | 'sessions', initialSearch?: string, initialId?: string | null }) => {
     const [activeTab, setActiveTab] = useState<'vocabulary' | 'sessions'>(initialTab);
+    const [showStartCalendar, setShowStartCalendar] = useState(false);
+    const [showEndCalendar, setShowEndCalendar] = useState(false);
+    const [showDetail, setShowDetail] = useState(false);
     const [searchQuery, setSearchQuery] = useState(initialSearch);
     const [selectedItem, setSelectedItem] = useState<any>(null);
+    const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
     const [vocabList, setVocabList] = useState<any[]>([]);
     const [sessionLogs, setSessionLogs] = useState<any[]>([]);
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -51,15 +56,15 @@ const Notebook = ({ initialTab = 'sessions', initialSearch = '', initialId = nul
         }
     }, [initialId, sessionLogs.length, vocabList.length]);
 
+    useEffect(() => {
+        setIsConfirmingDelete(false);
+    }, [selectedItem]);
+
     const handleDelete = async () => {
         if (!selectedItem) return;
 
         try {
             const isVocab = selectedItem.type === 'vocab' || (!selectedItem.module && selectedItem.word);
-            const confirmName = isVocab ? `the vocabulary word "${selectedItem.word}"` : "this session log";
-            const confirm = window.confirm(`Are you absolutely sure you want to erase ${confirmName}? This action is permanent and will affect your analytics.`);
-            if (!confirm) return;
-
             console.log("Attempting to delete ID:", selectedItem.id, "Type:", isVocab ? "Vocab" : "Log");
 
             if (isVocab) {
@@ -126,7 +131,7 @@ const Notebook = ({ initialTab = 'sessions', initialSearch = '', initialId = nul
         return matchesSearch && matchesCategory && matchesDate;
     }).reverse();
 
-    const [showDetail, setShowDetail] = useState(false);
+
 
     return (
         <div className="flex flex-col xl:flex-row h-full gap-4 sm:gap-8 overflow-hidden">
@@ -166,23 +171,54 @@ const Notebook = ({ initialTab = 'sessions', initialSearch = '', initialId = nul
                 <div className="flex flex-col gap-2">
                     <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest pl-2">Filter by Period</span>
                     <div className="flex items-center gap-2">
-                        <div className="relative flex-1 group">
-                            <input
-                                type="date"
-                                value={dateRange.start}
-                                onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
-                                className="w-full bg-zinc-900/50 border border-white/5 rounded-xl py-2 px-3 text-[9px] uppercase font-black tracking-widest text-zinc-400 outline-none focus:border-indigo-500/30 transition-all [color-scheme:dark]"
-                            />
+                        <div className="relative flex-1 group z-[50]">
+                            <button
+                                onClick={() => { setShowStartCalendar(!showStartCalendar); setShowEndCalendar(false); }}
+                                className="w-full bg-zinc-900/50 border border-white/5 rounded-xl py-2 px-3 text-[9px] uppercase font-black tracking-widest text-zinc-400 outline-none hover:border-indigo-500/30 transition-all text-left truncate"
+                            >
+                                {dateRange.start || "START DATE"}
+                            </button>
+                            <AnimatePresence>
+                                {showStartCalendar && (
+                                    <div className="absolute top-full left-0 mt-2 z-[60]">
+                                        <EngressCalendar
+                                            selectedDate={dateRange.start}
+                                            onDateSelect={(date) => {
+                                                setDateRange(prev => ({ ...prev, start: date }));
+                                                setShowStartCalendar(false);
+                                            }}
+                                            onClose={() => setShowStartCalendar(false)}
+                                        />
+                                    </div>
+                                )}
+                            </AnimatePresence>
                         </div>
+
                         <span className="text-zinc-700 font-bold text-[10px]">TO</span>
-                        <div className="relative flex-1 group">
-                            <input
-                                type="date"
-                                value={dateRange.end}
-                                onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
-                                className="w-full bg-zinc-900/50 border border-white/5 rounded-xl py-2 px-3 text-[9px] uppercase font-black tracking-widest text-zinc-400 outline-none focus:border-indigo-500/30 transition-all [color-scheme:dark]"
-                            />
+
+                        <div className="relative flex-1 group z-[40]">
+                            <button
+                                onClick={() => { setShowEndCalendar(!showEndCalendar); setShowStartCalendar(false); }}
+                                className="w-full bg-zinc-900/50 border border-white/5 rounded-xl py-2 px-3 text-[9px] uppercase font-black tracking-widest text-zinc-400 outline-none hover:border-indigo-500/30 transition-all text-left truncate"
+                            >
+                                {dateRange.end || "END DATE"}
+                            </button>
+                            <AnimatePresence>
+                                {showEndCalendar && (
+                                    <div className="absolute top-full right-0 mt-2 z-[60]">
+                                        <EngressCalendar
+                                            selectedDate={dateRange.end}
+                                            onDateSelect={(date) => {
+                                                setDateRange(prev => ({ ...prev, end: date }));
+                                                setShowEndCalendar(false);
+                                            }}
+                                            onClose={() => setShowEndCalendar(false)}
+                                        />
+                                    </div>
+                                )}
+                            </AnimatePresence>
                         </div>
+
                         {(dateRange.start || dateRange.end) && (
                             <button
                                 onClick={() => setDateRange({ start: '', end: '' })}
@@ -246,7 +282,7 @@ const Notebook = ({ initialTab = 'sessions', initialSearch = '', initialId = nul
                                     </div>
                                 ) : (
                                     filteredLogs.map((log, i) => {
-                                        let displayTitle = `${log.module} Session`;
+                                        let displayTitle = `${log.module}Session`;
                                         let displaySub = log.reflection || "No obstacles reported for this session.";
 
                                         if (log.module?.toLowerCase() === 'speaking' && log.content) {
@@ -263,7 +299,7 @@ const Notebook = ({ initialTab = 'sessions', initialSearch = '', initialId = nul
                                                 className={`w-full glass p-4 sm:p-5 rounded-3xl text-left transition-all border group ${selectedItem?.id === log.id ? 'bg-white/10 border-indigo-500/30' : 'border-transparent hover:bg-white/5'}`}
                                             >
                                                 <div className="flex justify-between items-start mb-2">
-                                                    <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${getCategoryColorClass(log.module, 'fill')} ${getCategoryColorClass(log.module, 'border')} ${getCategoryColorClass(log.module, 'text')}`}>
+                                                    <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${getCategoryColorClass(log.module, 'fill')}${getCategoryColorClass(log.module, 'border')}${getCategoryColorClass(log.module, 'text')}`}>
                                                         {displayTitle}
                                                     </span>
                                                     <span className="text-[9px] font-mono text-zinc-600">{log.date}</span>
@@ -304,7 +340,7 @@ const Notebook = ({ initialTab = 'sessions', initialSearch = '', initialId = nul
             </div>
 
             {/* Right: Detail View */}
-            <div className={`flex-1 ring-1 ring-white/5 rounded-[2rem] lg:rounded-[3.5rem] bg-zinc-900/10 flex flex-col p-4 sm:p-8 xl:p-12 overflow-y-auto custom-scrollbar relative ${showDetail ? 'flex' : 'hidden xl:flex'}`}>
+            <div className={`flex-1 rounded-[2rem] lg:rounded-[3.5rem] bg-zinc-900/10 flex flex-col p-4 sm:p-8 xl:p-12 overflow-y-auto custom-scrollbar relative ${showDetail ? 'flex' : 'hidden xl:flex'}`}>
                 {/* Mobile/Tablet Back Button */}
                 <button
                     onClick={() => setShowDetail(false)}
@@ -353,7 +389,7 @@ const Notebook = ({ initialTab = 'sessions', initialSearch = '', initialId = nul
                             <>
                                 <div className="space-y-4 border-b border-white/10 pb-8">
                                     <div className="flex items-center gap-3">
-                                        <span className={`px-3 py-1 rounded-full border text-[10px] font-black uppercase tracking-widest ${getCategoryColorClass(selectedItem.module, 'fill')} ${getCategoryColorClass(selectedItem.module, 'border')} ${getCategoryColorClass(selectedItem.module, 'text')}`}>
+                                        <span className={`px-3 py-1 rounded-full border text-[10px] font-black uppercase tracking-widest ${getCategoryColorClass(selectedItem.module, 'fill')}${getCategoryColorClass(selectedItem.module, 'border')}${getCategoryColorClass(selectedItem.module, 'text')}`}>
                                             {selectedItem.module || 'General'} Session
                                         </span>
                                         <span className="text-zinc-500 text-xs font-mono">{selectedItem.date}</span>
@@ -373,13 +409,13 @@ const Notebook = ({ initialTab = 'sessions', initialSearch = '', initialId = nul
                                                         return data.title || "Speaking Session";
                                                     }
                                                     // Others
-                                                    return selectedItem.module ? `${selectedItem.module} Session` : "Daily Reflection";
+                                                    return selectedItem.module ? `${selectedItem.module}Session` : "Daily Reflection";
                                                 } catch (e) {
                                                     // Fallback if parsing fails or not structured
-                                                    return selectedItem.module ? `${selectedItem.module} Session` : "Daily Reflection";
+                                                    return selectedItem.module ? `${selectedItem.module}Session` : "Daily Reflection";
                                                 }
                                             })()
-                                        ) : (selectedItem.module ? `${selectedItem.module} Session` : "Daily Reflection")}
+                                        ) : (selectedItem.module ? `${selectedItem.module}Session` : "Daily Reflection")}
                                     </h1>
                                 </div>
 
@@ -522,13 +558,33 @@ const Notebook = ({ initialTab = 'sessions', initialSearch = '', initialId = nul
                                             <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest">Danger Zone</p>
                                             <p className="text-xs text-zinc-500">Permanently delete this entry from your Notebook.</p>
                                         </div>
-                                        <button
-                                            onClick={handleDelete}
-                                            className="px-6 py-3 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 group"
-                                        >
-                                            <Trash2 className="w-4 h-4 group-hover:animate-bounce" />
-                                            Erase Entry
-                                        </button>
+                                        <div className="flex items-center gap-3">
+                                            {isConfirmingDelete ? (
+                                                <>
+                                                    <button
+                                                        onClick={() => setIsConfirmingDelete(false)}
+                                                        className="px-4 py-2 bg-zinc-800 text-zinc-400 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+                                                    >
+                                                        Cancel
+                                                    </button>
+                                                    <button
+                                                        onClick={handleDelete}
+                                                        className="px-6 py-3 bg-red-600 hover:bg-red-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 shadow-lg shadow-red-600/20 animate-pulse"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                        Confirm Erase
+                                                    </button>
+                                                </>
+                                            ) : (
+                                                <button
+                                                    onClick={() => setIsConfirmingDelete(true)}
+                                                    className="px-6 py-3 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 group"
+                                                >
+                                                    <Trash2 className="w-4 h-4 group-hover:animate-bounce" />
+                                                    Erase Entry
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             </>

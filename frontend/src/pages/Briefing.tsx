@@ -113,19 +113,19 @@ const Briefing = ({ onComplete }: { onComplete: () => void }) => {
 
                 {/* Content Side */}
                 <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-between bg-zinc-900/80 backdrop-blur-md">
-                    <div className="space-y-8">
-                        <div className="flex items-center justify-between">
-                            <div className="flex gap-1">
-                                {steps.map((_, i) => (
-                                    <div
-                                        key={i}
-                                        className={`h-1 rounded-full transition-all duration-500 ${i === step ? 'w-8 bg-indigo-500' : 'w-2 bg-zinc-800'}`}
-                                    />
-                                ))}
-                            </div>
-                            <span className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Step {step + 1} / {steps.length}</span>
+                    <div className="flex flex-col items-center gap-1 mb-8">
+                        <span className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Step {step + 1} / {steps.length}</span>
+                        <div className="flex gap-1.5 mt-1">
+                            {steps.map((_, i) => (
+                                <div
+                                    key={i}
+                                    className={`h-1 rounded-full transition-all duration-500 ${step >= i ? 'w-4 bg-indigo-500' : 'w-1.5 bg-zinc-800'}`}
+                                />
+                            ))}
                         </div>
+                    </div>
 
+                    <div className="space-y-8">
                         <AnimatePresence mode="wait">
                             <motion.div
                                 key={step}

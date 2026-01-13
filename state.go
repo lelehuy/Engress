@@ -24,7 +24,7 @@ func (a *App) LoadState() (*AppState, error) {
 					TestDate:        "2026-03-01",
 					TargetScore:     7.5,
 					IsSetupComplete: false,
-					ReminderTime:    "10:00",
+					ReminderTimes:   []string{"10:00", "22:00"},
 					ReminderEnabled: true,
 				},
 				DailyLogs: []DailyLog{},

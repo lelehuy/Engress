@@ -58,7 +58,7 @@ export namespace main {
 	    target_score: number;
 	    last_open_date: string;
 	    is_setup_complete: boolean;
-	    reminder_time: string;
+	    reminder_times: string[];
 	    reminder_enabled: boolean;
 	    tutorial_seen: boolean;
 	
@@ -73,7 +73,7 @@ export namespace main {
 	        this.target_score = source["target_score"];
 	        this.last_open_date = source["last_open_date"];
 	        this.is_setup_complete = source["is_setup_complete"];
-	        this.reminder_time = source["reminder_time"];
+	        this.reminder_times = source["reminder_times"];
 	        this.reminder_enabled = source["reminder_enabled"];
 	        this.tutorial_seen = source["tutorial_seen"];
 	    }

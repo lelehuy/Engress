@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Settings as SettingsIcon, Calendar, Save, Zap, Bell, Lock, Clock, Shield, User, Trash2, AlertTriangle } from 'lucide-react';
-import { GetAppState, UpdateTestDate, UpdateReminders, UpdateProfileName, GetAppVersion, CheckUpdate, DownloadUpdate, ResetAppData } from "../../wailsjs/go/main/App";
+import { Settings as SettingsIcon, Calendar, Save, Zap, Bell, Lock, Clock, Shield, User, Trash2, AlertTriangle, ChevronRight, X } from 'lucide-react';
+import { GetAppState, UpdateTestDate, UpdateReminders, UpdateProfileName, GetAppVersion, CheckUpdate, DownloadUpdate, ResetAppData, Notify } from "../../wailsjs/go/main/App";
 import { WindowReload } from "../../wailsjs/runtime/runtime";
-import logoUniversal from '../assets/images/logo-universal.png';
+import EngressCalendar from '../components/EngressCalendar';
 import appIcon from '../assets/images/appicon.png';
 
 const Settings = ({ onRefresh }: { onRefresh?: () => void }) => {
@@ -11,13 +11,15 @@ const Settings = ({ onRefresh }: { onRefresh?: () => void }) => {
     const [testDate, setTestDate] = useState('2026-03-01');
     const [isSaving, setIsSaving] = useState(false);
     const [reminderEnabled, setReminderEnabled] = useState(true);
-    const [reminderTime, setReminderTime] = useState('10:00');
+    const [reminderTimes, setReminderTimes] = useState<string[]>(['10:00', '22:00']);
     const [appVersion, setAppVersion] = useState('v0.0.0');
 
     // Update States
     const [checkingUpdate, setCheckingUpdate] = useState(false);
     const [downloading, setDownloading] = useState(false);
     const [updateStatus, setUpdateStatus] = useState<any>(null); // { available: bool, msg: string, url: string, version: string }
+
+    const [showCalendar, setShowCalendar] = useState(false);
 
     useEffect(() => {
         GetAppState().then(state => {
@@ -27,8 +29,8 @@ const Settings = ({ onRefresh }: { onRefresh?: () => void }) => {
             if (state.user_profile.test_date) {
                 setTestDate(state.user_profile.test_date);
             }
-            if (state.user_profile.reminder_time) {
-                setReminderTime(state.user_profile.reminder_time);
+            if (state.user_profile.reminder_times) {
+                setReminderTimes(state.user_profile.reminder_times);
             }
             setReminderEnabled(state.user_profile.reminder_enabled !== false);
         });
@@ -40,7 +42,7 @@ const Settings = ({ onRefresh }: { onRefresh?: () => void }) => {
         setIsSaving(true);
         await UpdateProfileName(name);
         await UpdateTestDate(testDate);
-        await UpdateReminders(reminderEnabled, reminderTime);
+        await UpdateReminders(reminderEnabled, reminderTimes);
         if (onRefresh) onRefresh();
         setTimeout(() => setIsSaving(false), 500);
     };
@@ -81,10 +83,8 @@ const Settings = ({ onRefresh }: { onRefresh?: () => void }) => {
 
     const handleTestAlert = () => {
         setTestSent(true);
-        import('../../wailsjs/go/main/App').then(({ Notify }) => {
-            Notify("Engress Protocol", "Communication link active. Message received.");
-        });
-        setTimeout(() => setTestSent(false), 2000);
+        Notify("Engress: Mission Ready", "Your focus plan is active. Stay disciplined and conquer your goals!");
+        setTimeout(() => setTestSent(false), 3000);
     };
 
     const handleResetApp = async () => {
@@ -97,55 +97,73 @@ const Settings = ({ onRefresh }: { onRefresh?: () => void }) => {
     };
 
     return (
-        <div className="max-w-4xl mx-auto space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div className="max-w-5xl mx-auto space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
             <div className="flex flex-col gap-1">
-                <h1 className="text-4xl font-bold tracking-tight text-white">Application Settings</h1>
-                <p className="text-zinc-500 font-medium italic">Configure your Engress and mission parameters.</p>
+                <h1 className="text-4xl sm:text-5xl font-black tracking-tighter text-white italic uppercase">System Settings</h1>
+                <p className="text-zinc-500 font-bold uppercase tracking-widest text-[10px]">Configure your Engress and mission parameters.</p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                {/* Profile Settings */}
-                <div className="col-span-12 lg:col-span-7 space-y-6">
-                    <div className="glass p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] space-y-8">
-                        <div className="flex items-center gap-3">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Column 1: Core Config */}
+                <div className="space-y-8">
+                    {/* Mission Profile Card */}
+                    <div className="glass p-8 sm:p-10 rounded-[2.5rem] sm:rounded-[4rem] space-y-8 border-indigo-500/10">
+                        <div className="flex items-center gap-4">
                             <div className="p-3 bg-indigo-500/10 rounded-2xl border border-indigo-500/20">
                                 <Shield className="w-5 h-5 text-indigo-400" />
                             </div>
                             <div>
-                                <h3 className="text-base sm:text-lg font-bold text-white uppercase tracking-tight">Mission Profile</h3>
-                                <p className="text-[10px] sm:text-xs text-zinc-500">Initialize identity and timing calibration.</p>
+                                <h3 className="text-lg font-black text-white uppercase tracking-tight italic">Mission Profile</h3>
+                                <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Identity Calibration</p>
                             </div>
                         </div>
 
-                        <div className="space-y-6">
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] ml-2">Commander Name</label>
+                        <div className="space-y-8">
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.25em] ml-2">Your Name</label>
                                 <div className="relative group">
-                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600 group-focus-within:text-indigo-400 transition-colors">
-                                        <User className="w-4 h-4" />
+                                    <div className="absolute left-6 top-1/2 -translate-y-1/2 text-zinc-600 group-focus-within:text-indigo-400 transition-colors pointer-events-none">
+                                        <User className="w-5 h-5" />
                                     </div>
                                     <input
                                         type="text"
                                         value={name}
                                         onChange={(e) => setName(e.target.value)}
-                                        placeholder="Enter your name..."
-                                        className="w-full bg-zinc-900 border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-white font-bold outline-none focus:border-indigo-500/50 transition-all text-sm uppercase tracking-widest placeholder:text-zinc-800"
+                                        placeholder="Enter name..."
+                                        className="w-full bg-zinc-950 border border-white/5 rounded-3xl py-6 pl-16 pr-6 text-white font-black outline-none focus:border-indigo-500/50 transition-all text-sm uppercase tracking-widest placeholder:text-zinc-800"
                                     />
                                 </div>
                             </div>
 
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] ml-2">Official Test Date</label>
+
+                            <div className="space-y-3 relative">
+                                <label className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.25em] ml-2">Official Test Date</label>
                                 <div className="relative group">
-                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600 group-focus-within:text-indigo-400 transition-colors">
-                                        <Calendar className="w-4 h-4" />
+                                    <div className="absolute left-6 top-1/2 -translate-y-1/2 text-zinc-600 group-focus-within:text-indigo-400 transition-colors pointer-events-none z-10">
+                                        <Calendar className="w-5 h-5" />
                                     </div>
-                                    <input
-                                        type="date"
-                                        value={testDate}
-                                        onChange={(e) => setTestDate(e.target.value)}
-                                        className="w-full bg-zinc-900 border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-white font-bold outline-none focus:border-indigo-500/50 transition-all cursor-pointer text-sm uppercase tracking-widest"
-                                    />
+                                    <button
+                                        onClick={() => setShowCalendar(!showCalendar)}
+                                        className="w-full bg-zinc-950 border border-white/5 rounded-3xl py-6 pl-16 pr-8 text-white font-black outline-none focus:border-indigo-500/50 transition-all cursor-pointer text-sm uppercase tracking-widest text-left flex items-center justify-between"
+                                    >
+                                        <span>{testDate ? new Date(testDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'Set Date'}</span>
+                                        <ChevronRight className={`w-5 h-5 text-zinc-700 transition-transform ${showCalendar ? 'rotate-90' : ''}`} />
+                                    </button>
+
+                                    <AnimatePresence>
+                                        {showCalendar && (
+                                            <div className="absolute top-full left-0 right-0 mt-4 z-[100] flex justify-center">
+                                                <EngressCalendar
+                                                    selectedDate={testDate}
+                                                    onDateSelect={(date) => {
+                                                        setTestDate(date);
+                                                        setShowCalendar(false);
+                                                    }}
+                                                    onClose={() => setShowCalendar(false)}
+                                                />
+                                            </div>
+                                        )}
+                                    </AnimatePresence>
                                 </div>
                             </div>
                         </div>
@@ -153,88 +171,127 @@ const Settings = ({ onRefresh }: { onRefresh?: () => void }) => {
                         <button
                             onClick={handleSave}
                             disabled={isSaving}
-                            className={`w-full py-3 sm:py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] sm:text-xs flex items-center justify-center gap-2 transition-all ${isSaving ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/20' : 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-xl shadow-indigo-600/20 active:scale-95'}`}
+                            className={`w-full py-6 rounded-3xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-3 transition-all ${isSaving ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/20' : 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-2xl shadow-indigo-600/30 active:scale-95'}`}
                         >
                             {isSaving ? 'Directives Updated' : 'Update Configuration'}
-                            {!isSaving && <Save className="w-4 h-4" />}
+                            {!isSaving && <Save className="w-5 h-5" />}
                         </button>
                     </div>
 
-                    <div className="glass p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] bg-indigo-600/5 border-indigo-500/10 space-y-6">
+                    {/* Active Reminders Card */}
+                    <div className="glass p-8 sm:p-10 rounded-[2.5rem] sm:rounded-[4rem] border-indigo-500/10 space-y-8">
                         <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <Zap className="w-5 h-5 text-indigo-400" />
-                                <h3 className="text-base sm:text-lg font-bold text-white uppercase tracking-tight">Active Reminders</h3>
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 bg-indigo-500/10 rounded-2xl border border-indigo-500/20">
+                                    <Bell className="w-5 h-5 text-indigo-400" />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-black text-white uppercase tracking-tight italic">Active Reminders</h3>
+                                    <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest italic">Discipline Rules</p>
+                                </div>
                             </div>
-                            <div className={`w-10 sm:w-12 h-5 sm:h-6 rounded-full relative cursor-pointer transition-colors ${reminderEnabled ? 'bg-indigo-600' : 'bg-zinc-800'}`} onClick={() => setReminderEnabled(!reminderEnabled)}>
+                            <div className={`w-14 h-7 rounded-full relative cursor-pointer transition-colors ${reminderEnabled ? 'bg-indigo-600' : 'bg-zinc-800'}`} onClick={() => setReminderEnabled(!reminderEnabled)}>
                                 <motion.div
-                                    animate={{ x: reminderEnabled ? (window.innerWidth < 640 ? 20 : 24) : 4 }}
-                                    className="absolute top-0.5 sm:top-1 w-3.5 sm:w-4 h-3.5 sm:h-4 rounded-full bg-white shadow-sm"
+                                    animate={{ x: reminderEnabled ? 32 : 4 }}
+                                    className="absolute top-1 w-5 h-5 rounded-full bg-white shadow-sm"
                                 />
                             </div>
                         </div>
 
-                        <div className="space-y-4">
-                            <p className="text-[10px] sm:text-xs text-zinc-500 leading-relaxed font-medium">
-                                Engress will transmit a priority alert if your daily study goal is not yet achieved by the specified timestamp.
+                        <div className="space-y-6">
+                            <p className="text-xs text-zinc-500 leading-relaxed font-bold italic border-l-2 border-indigo-500/20 pl-4">
+                                Engress will transmit priority alerts if your daily mission is incomplete by the specified checkpoints.
                             </p>
 
                             {reminderEnabled && (
-                                <div className="flex items-center gap-3 sm:gap-4 p-4 bg-zinc-900/50 border border-white/5 rounded-2xl">
-                                    <Clock className="w-4 h-4 text-zinc-600 shrink-0" />
-                                    <input
-                                        type="time"
-                                        value={reminderTime}
-                                        onChange={(e) => setReminderTime(e.target.value)}
-                                        className="bg-transparent text-white font-black outline-none uppercase text-xs sm:text-sm tracking-widest"
-                                    />
-                                    <span className="text-[10px] font-black text-zinc-700 uppercase tracking-widest ml-auto hidden sm:inline">Daily Checkpoint</span>
+                                <div className="space-y-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        {reminderTimes.map((time, index) => (
+                                            <div key={index} className="flex items-center gap-4 p-4 bg-zinc-950 border border-white/5 rounded-2xl group/rem transition-all hover:border-indigo-500/30">
+                                                <Clock className="w-4 h-4 text-zinc-700 shrink-0 group-hover/rem:text-indigo-400" />
+                                                <input
+                                                    type="time"
+                                                    value={time}
+                                                    onChange={(e) => {
+                                                        const newTimes = [...reminderTimes];
+                                                        newTimes[index] = e.target.value;
+                                                        setReminderTimes(newTimes);
+                                                    }}
+                                                    className="bg-transparent text-white font-black outline-none uppercase text-xs tracking-widest flex-1"
+                                                />
+                                                <button
+                                                    onClick={() => setReminderTimes(reminderTimes.filter((_, i) => i !== index))}
+                                                    className="p-1.5 text-zinc-800 hover:text-red-500 transition-colors opacity-0 group-hover/rem:opacity-100"
+                                                >
+                                                    <X className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        ))}
+                                        {reminderTimes.length < 4 && (
+                                            <button
+                                                onClick={() => setReminderTimes([...reminderTimes, '21:00'])}
+                                                className="flex items-center justify-center gap-2 p-4 border-2 border-dashed border-white/5 rounded-2xl text-[10px] font-black text-zinc-700 uppercase tracking-widest hover:border-indigo-500/30 hover:text-indigo-400 transition-all bg-zinc-950/20"
+                                            >
+                                                <Zap className="w-3.5 h-3.5" />
+                                                Add Reminder
+                                            </button>
+                                        )}
+                                    </div>
+                                    <p className="text-[9px] font-bold text-zinc-800 uppercase tracking-widest text-center">Maximum 4 dynamic checkpoints allowed</p>
                                 </div>
                             )}
                         </div>
                     </div>
                 </div>
 
-                {/* Info Cards */}
-                <div className="col-span-12 lg:col-span-5 space-y-6">
-                    <div className="glass p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] bg-indigo-600 text-white shadow-22xl shadow-indigo-600/20 border-none space-y-4">
-                        <Lock className="w-6 sm:w-8 h-6 sm:h-8 opacity-50" />
-                        <h3 className="text-lg sm:text-xl font-bold leading-tight italic uppercase italic">Privacy Mode</h3>
-                        <p className="text-white/60 text-[10px] sm:text-xs leading-relaxed font-medium">
+                {/* Column 2: System Info */}
+                <div className="space-y-8">
+                    {/* Privacy Mode Card */}
+                    <div className="glass p-8 sm:p-10 rounded-[2.5rem] sm:rounded-[4rem] bg-indigo-600 text-white shadow-3xl shadow-indigo-600/30 border-none space-y-6">
+                        <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center border border-white/20 shadow-xl">
+                            <Lock className="w-7 h-7" />
+                        </div>
+                        <h3 className="text-2xl font-black italic uppercase tracking-tighter">Secure Storage</h3>
+                        <p className="text-white/70 text-sm leading-relaxed font-bold italic">
                             Mission analytics and history are stored exclusively on your local system. No data transmission occurs beyond your authorization.
                         </p>
                     </div>
 
-                    <div className="glass p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] border-dashed border-white/10 space-y-4">
-                        <div className="flex items-center gap-2">
-                            <SettingsIcon className="w-4 h-4 text-zinc-500" />
-                            <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">About Engress</span>
+                    {/* App Info Card */}
+                    <div className="glass p-8 sm:p-10 rounded-[2.5rem] sm:rounded-[4rem] border-dashed border-white/10 space-y-8 flex flex-col items-center">
+                        <div className="w-full flex items-center gap-3">
+                            <div className="p-2 bg-zinc-900 rounded-lg">
+                                <SettingsIcon className="w-3.5 h-3.5 text-zinc-600" />
+                            </div>
+                            <span className="text-[10px] font-black text-zinc-700 uppercase tracking-widest">System Architecture</span>
                         </div>
-                        <div className="flex flex-col items-center text-center space-y-4 py-4">
-                            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center p-3 border border-white/5 shadow-2xl">
-                                <img src={appIcon} className="w-full h-full object-contain opacity-80" alt="Engress Logo" />
+
+                        <div className="flex flex-col items-center text-center space-y-6 pt-4 w-full">
+                            <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center p-5 shadow-3xl relative">
+                                <div className="absolute inset-0 bg-indigo-500/5 blur-3xl rounded-full" />
+                                <img src={appIcon} className="w-full h-full object-contain relative z-10" alt="Engress Logo" />
                             </div>
                             <div>
-                                <h4 className="text-xl font-black text-white italic uppercase tracking-tighter">Engress</h4>
-                                <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mt-1">Version {appVersion}</p>
+                                <h4 className="text-3xl font-black text-white italic uppercase tracking-tighter">Engress</h4>
+                                <p className="text-[10px] font-black text-zinc-700 uppercase tracking-widest mt-2">{appVersion}</p>
                             </div>
                         </div>
 
-                        <div className="space-y-3 pt-4 border-t border-white/5">
+                        <div className="w-full space-y-4 pt-10 border-t border-white/5">
                             {!updateStatus ? (
                                 <button
                                     onClick={handleCheckUpdate}
                                     disabled={checkingUpdate}
-                                    className="w-full py-3 border border-white/5 bg-zinc-900 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500 hover:bg-zinc-800 hover:text-white transition-all flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50 disabled:cursor-wait"
+                                    className="w-full py-4 border border-white/5 bg-zinc-950 rounded-2xl text-[9px] font-black uppercase tracking-[0.25em] text-zinc-500 hover:bg-zinc-900 hover:text-indigo-400 transition-all flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50"
                                 >
-                                    <Zap className={`w-3.5 h-3.5 ${checkingUpdate ? 'animate-pulse text-indigo-400' : ''}`} />
+                                    <Zap className={`w-4 h-4 ${checkingUpdate ? 'animate-pulse text-indigo-400' : ''}`} />
                                     {checkingUpdate ? 'Scanning Frequency...' : 'Check for Updates'}
                                 </button>
                             ) : (
-                                <div className={`w-full p-4 rounded-xl border ${updateStatus.available ? 'bg-indigo-500/10 border-indigo-500/20' : 'bg-zinc-900 border-white/5'} flex flex-col items-center gap-3 animate-in fade-in slide-in-from-top-2`}>
+                                <div className={`w-full p-6 rounded-3xl border ${updateStatus.available ? 'bg-indigo-500/10 border-indigo-500/20' : 'bg-zinc-950 border-white/5'} flex flex-col items-center gap-4 animate-in fade-in slide-in-from-top-2`}>
                                     <div className="flex items-center gap-2">
                                         <div className={`w-2 h-2 rounded-full ${updateStatus.available ? 'bg-indigo-400 animate-pulse' : 'bg-zinc-500'}`} />
-                                        <span className={`text-[10px] font-black uppercase tracking-widest ${updateStatus.available ? 'text-white' : 'text-zinc-500'}`}>
+                                        <span className={`text-[10px] font-black uppercase tracking-widest ${updateStatus.available ? 'text-white' : 'text-zinc-700'}`}>
                                             {updateStatus.msg}
                                         </span>
                                     </div>
@@ -243,7 +300,7 @@ const Settings = ({ onRefresh }: { onRefresh?: () => void }) => {
                                         <button
                                             onClick={handleDownloadUpdate}
                                             disabled={downloading}
-                                            className="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-indigo-600/20 active:scale-95 disabled:opacity-50 disabled:cursor-wait"
+                                            className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl shadow-indigo-600/30 active:scale-95 disabled:opacity-50"
                                         >
                                             {downloading ? 'Downloading Installer...' : 'Download & Install'}
                                         </button>
@@ -252,9 +309,9 @@ const Settings = ({ onRefresh }: { onRefresh?: () => void }) => {
                                     {!updateStatus.available && (
                                         <button
                                             onClick={() => setUpdateStatus(null)}
-                                            className="text-[9px] font-bold text-zinc-600 hover:text-zinc-400 uppercase tracking-widest"
+                                            className="text-[9px] font-black text-zinc-800 hover:text-zinc-500 uppercase tracking-widest"
                                         >
-                                            Check Again
+                                            Re-scan Network
                                         </button>
                                     )}
                                 </div>
@@ -262,20 +319,21 @@ const Settings = ({ onRefresh }: { onRefresh?: () => void }) => {
 
                             <button
                                 onClick={handleTestAlert}
-                                className={`w-full py-3 border rounded-xl text-[9px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 active:scale-95 ${testSent ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-transparent border-transparent text-zinc-600 hover:text-zinc-400'}`}
+                                className={`w-full py-4 border rounded-2xl text-[9px] font-black uppercase tracking-[0.25em] transition-all flex items-center justify-center gap-3 active:scale-95 ${testSent ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-transparent border-transparent text-zinc-700 hover:text-white'}`}
                             >
-                                {testSent ? 'System Alert Sent' : 'Test Notifications'}
+                                <Bell className="w-4 h-4" />
+                                {testSent ? 'System Alert Transmitted' : 'Test Notifications'}
                             </button>
 
-                            <div className="pt-4 border-t border-white/5">
+                            <div className="pt-6">
                                 <button
                                     onClick={() => setShowResetConfirm(true)}
-                                    className="w-full py-3 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 active:scale-95"
+                                    className="w-full py-4 bg-red-500/5 hover:bg-red-500/10 text-red-500/60 hover:text-red-500 border border-red-500/10 rounded-2xl text-[9px] font-black uppercase tracking-[0.25em] transition-all flex items-center justify-center gap-3 active:scale-95"
                                 >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                    Reset App Data
+                                    <Trash2 className="w-4 h-4" />
+                                    Wipe System Data
                                 </button>
-                                <p className="text-[8px] text-zinc-600 text-center mt-2 font-bold uppercase tracking-widest">DANGER: THIS CLEARS ALL LOCAL DATA</p>
+                                <p className="text-[8px] text-zinc-800 text-center mt-3 font-bold uppercase tracking-[0.2em]">DANGER: PERMANENT DATA ERASURE</p>
                             </div>
                         </div>
                     </div>
@@ -289,36 +347,24 @@ const Settings = ({ onRefresh }: { onRefresh?: () => void }) => {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-6"
+                        className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-md flex items-center justify-center p-6"
                     >
                         <motion.div
-                            initial={{ scale: 0.9, y: 20 }}
+                            initial={{ scale: 0.9, y: 30 }}
                             animate={{ scale: 1, y: 0 }}
-                            exit={{ scale: 0.9, y: 20 }}
-                            className="glass max-w-sm w-full rounded-[2rem] p-8 border-red-500/20 space-y-6 text-center"
+                            exit={{ scale: 0.9, y: 30 }}
+                            className="glass max-w-sm w-full rounded-[3rem] p-10 border-red-500/20 space-y-8 text-center"
                         >
-                            <div className="w-16 h-16 bg-red-500/10 rounded-2xl flex items-center justify-center mx-auto">
-                                <AlertTriangle className="w-8 h-8 text-red-500" />
+                            <div className="w-20 h-20 bg-red-500/10 rounded-3xl flex items-center justify-center mx-auto border border-red-500/20">
+                                <AlertTriangle className="w-10 h-10 text-red-500" />
                             </div>
-                            <div className="space-y-2">
-                                <h3 className="text-xl font-black text-white uppercase italic">Nuclear Reset?</h3>
-                                <p className="text-zinc-400 text-xs font-medium leading-relaxed">
-                                    This will permanently delete all your study logs, vocabulary, and settings. This action cannot be undone.
-                                </p>
+                            <div>
+                                <h3 className="text-2xl font-black text-white italic uppercase tracking-tighter">Wipe All Data</h3>
+                                <p className="text-zinc-500 text-xs mt-3 font-bold italic leading-relaxed">This will permanently delete ALL logs, vocabulary, and user configurations. This mandate cannot be reversed.</p>
                             </div>
-                            <div className="grid grid-cols-2 gap-3">
-                                <button
-                                    onClick={() => setShowResetConfirm(false)}
-                                    className="py-3 bg-zinc-900 text-zinc-400 font-black uppercase tracking-widest text-[10px] rounded-xl hover:bg-zinc-800 transition-all"
-                                >
-                                    Abort
-                                </button>
-                                <button
-                                    onClick={handleResetApp}
-                                    className="py-3 bg-red-600 text-white font-black uppercase tracking-widest text-[10px] rounded-xl hover:bg-red-500 shadow-lg shadow-red-600/20 transition-all"
-                                >
-                                    Confirm
-                                </button>
+                            <div className="flex gap-4">
+                                <button onClick={() => setShowResetConfirm(false)} className="flex-1 py-5 bg-zinc-900 border border-white/5 text-white font-black rounded-2xl hover:bg-zinc-800 transition-all text-[10px] uppercase tracking-widest">Abort</button>
+                                <button onClick={handleResetApp} className="flex-1 py-5 bg-red-600 text-white font-black rounded-2xl hover:bg-red-500 transition-all text-[10px] uppercase tracking-widest shadow-2xl shadow-red-600/40">Execute Wipe</button>
                             </div>
                         </motion.div>
                     </motion.div>

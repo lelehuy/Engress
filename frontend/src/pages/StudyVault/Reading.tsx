@@ -279,7 +279,7 @@ const Reading = ({ onBack, onFinish, initialData, onUpdate }: {
                                         <span className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em]">Module Insights</span>
                                     </div>
                                     <h2 className="text-4xl font-black tracking-tighter italic">
-                                        {stats.totalRuns >= 5 ? 'Stable Engine Protocol' : 'Initial Calibration Phase'}
+                                        {stats.totalRuns >= 5 ? 'Stable Engine State' : 'Initial Calibration Phase'}
                                     </h2>
                                     <p className="text-zinc-500 text-sm max-w-sm font-medium">
                                         {stats.totalRuns >= 5
@@ -325,7 +325,7 @@ const Reading = ({ onBack, onFinish, initialData, onUpdate }: {
                     <div className="space-y-6 pt-12 border-t border-white/5">
                         <div className="flex items-center gap-3">
                             <Target className="w-5 h-5 text-zinc-600" />
-                            <h3 className="text-sm font-black uppercase tracking-widest text-zinc-400">Progression Protocol</h3>
+                            <h3 className="text-sm font-black uppercase tracking-widest text-zinc-400">Progression Roadmap</h3>
                         </div>
                         <div className="space-y-3">
                             {[

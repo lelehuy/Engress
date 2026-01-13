@@ -136,7 +136,7 @@ const Writing = ({ onBack, onFinish, initialData, onUpdate }: {
                         <div className="space-y-4">
                             <div className="flex items-center gap-3 px-4 py-2 bg-indigo-500/10 text-indigo-400 rounded-2xl border border-indigo-500/20 w-fit">
                                 <PenTool className="w-4 h-4" />
-                                <span className="text-[10px] font-black uppercase tracking-widest">Writing Protocol</span>
+                                <span className="text-[10px] font-black uppercase tracking-widest">Writing Guidelines</span>
                             </div>
                             <div className="p-6 bg-zinc-900/50 rounded-[2rem] border border-white/5 relative overflow-hidden group">
                                 <p className="text-sm font-bold text-white mb-2 uppercase tracking-wide">Engress Guidance</p>

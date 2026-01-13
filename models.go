@@ -1,14 +1,14 @@
 package main
 
 type UserProfile struct {
-	Name            string  `json:"name"`
-	TestDate        string  `json:"test_date"`
-	TargetScore     float64 `json:"target_score"`
-	LastOpenDate    string  `json:"last_open_date"`    // For tracking daily alerts
-	IsSetupComplete bool    `json:"is_setup_complete"` // New flag
-	ReminderTime    string  `json:"reminder_time"`     // "10:00"
-	ReminderEnabled bool    `json:"reminder_enabled"`
-	TutorialSeen    bool    `json:"tutorial_seen"`
+	Name            string   `json:"name"`
+	TestDate        string   `json:"test_date"`
+	TargetScore     float64  `json:"target_score"`
+	LastOpenDate    string   `json:"last_open_date"`    // For tracking daily alerts
+	IsSetupComplete bool     `json:"is_setup_complete"` // New flag
+	ReminderTimes   []string `json:"reminder_times"`    // ["10:00", "22:00"]
+	ReminderEnabled bool     `json:"reminder_enabled"`
+	TutorialSeen    bool     `json:"tutorial_seen"`
 }
 
 type Scores struct {

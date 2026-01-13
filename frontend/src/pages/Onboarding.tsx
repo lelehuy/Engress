@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Shield, ArrowRight, Calendar } from 'lucide-react';
-import { CompleteSetup } from "../../wailsjs/go/main/App";
+import { motion, AnimatePresence } from 'framer-motion';
+import { Shield, ArrowRight, Calendar as CalendarIcon, ChevronRight } from 'lucide-react';
+import { GetAppState, CompleteSetup } from "../../wailsjs/go/main/App";
+import EngressCalendar from '../components/EngressCalendar';
 
 interface OnboardingProps {
     onComplete: () => void;
@@ -10,11 +11,12 @@ interface OnboardingProps {
 const Onboarding = ({ onComplete }: OnboardingProps) => {
     const [step, setStep] = useState(1);
     const [name, setName] = useState('');
-    const [testDate, setTestDate] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
+    const [testDate, setTestDate] = useState('2026-03-01');
+    const [showCalendar, setShowCalendar] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleFinish = async () => {
-        setIsLoading(true);
+        setIsSubmitting(true);
         await CompleteSetup(name, testDate);
         setTimeout(() => {
             onComplete();
@@ -57,7 +59,7 @@ const Onboarding = ({ onComplete }: OnboardingProps) => {
                         transition={{ delay: 0.5 }}
                         className="text-sm sm:text-lg text-zinc-400 font-medium px-4"
                     >
-                        Protocol: Calibrate the Focus Engine for your examination deadline.
+                        Mission: Calibrate the Focus Engine for your examination deadline.
                     </motion.p>
                 </div>
 
@@ -100,13 +102,35 @@ const Onboarding = ({ onComplete }: OnboardingProps) => {
                             <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2 text-center">
                                 Mission Deadline: Select Test Date
                             </label>
-                            <div className="relative group">
-                                <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 w-5 h-5 group-focus-within:text-indigo-400 transition-colors" />
-                                <input
-                                    type="date"
-                                    onChange={(e) => setTestDate(e.target.value)}
-                                    className="w-full bg-zinc-900/50 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white font-bold outline-none focus:border-indigo-500/50 transition-all text-center uppercase tracking-widest text-lg"
-                                />
+                            <div className="space-y-2 relative">
+                                <label className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.3em] ml-2">Mission Deadline</label>
+                                <div className="relative group">
+                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600 group-focus-within:text-indigo-500 transition-colors z-10">
+                                        <CalendarIcon className="w-5 h-5" />
+                                    </div>
+                                    <button
+                                        onClick={() => setShowCalendar(!showCalendar)}
+                                        className="w-full bg-zinc-900/50 border border-white/10 rounded-2xl py-5 pl-12 pr-4 text-white font-bold outline-none focus:border-indigo-500/50 transition-all text-left uppercase tracking-widest text-lg flex items-center justify-between"
+                                    >
+                                        <span>{new Date(testDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+                                        <ChevronRight className={`w-5 h-5 text-zinc-700 transition-transform ${showCalendar ? 'rotate-90' : ''}`} />
+                                    </button>
+
+                                    <AnimatePresence>
+                                        {showCalendar && (
+                                            <div className="absolute top-full left-0 right-0 mt-4 z-[100] flex justify-center">
+                                                <EngressCalendar
+                                                    selectedDate={testDate}
+                                                    onDateSelect={(date) => {
+                                                        setTestDate(date);
+                                                        setShowCalendar(false);
+                                                    }}
+                                                    onClose={() => setShowCalendar(false)}
+                                                />
+                                            </div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
                             </div>
                             <div className="flex gap-4">
                                 <button onClick={() => setStep(1)} className="flex-1 border border-white/5 text-zinc-500 font-bold py-4 rounded-2xl hover:bg-white/5 transition-all text-xs uppercase">Back</button>
@@ -144,10 +168,10 @@ const Onboarding = ({ onComplete }: OnboardingProps) => {
 
                             <button
                                 onClick={handleFinish}
-                                disabled={isLoading}
+                                disabled={isSubmitting}
                                 className="w-full bg-indigo-600 text-white font-black py-4 rounded-2xl hover:bg-indigo-500 transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20 uppercase tracking-widest text-xs"
                             >
-                                {isLoading ? (
+                                {isSubmitting ? (
                                     <span className="animate-pulse">Calibrating Engress...</span>
                                 ) : (
                                     <>Initiate Interface <ArrowRight className="w-4 h-4" /></>

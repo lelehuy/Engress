@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Layout, Zap, Home, BookOpen, Calendar, BarChart3, Settings as SettingsIcon, CreditCard, Clock, Shield, PenTool, Mic, Book, ChevronLeft } from 'lucide-react';
+import { Layout, Zap, Home, BookOpen, Calendar, BarChart3, Settings as SettingsIcon, CreditCard, Clock, Shield, PenTool, Mic, Book, ChevronLeft, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Dashboard from './pages/Dashboard';
 import StudyVault from './pages/StudyVault';
@@ -12,6 +12,7 @@ import Summary from './pages/Summary';
 import Briefing from './pages/Briefing';
 import { EventsOn } from "../wailsjs/runtime/runtime";
 import { LogSession, GetAppState, SetPauseState, SetSessionCategory } from "../wailsjs/go/main/App";
+import { getLocalDateString } from './utils/dateUtils';
 import { useRef } from 'react';
 import AppIcon from './assets/images/appicon.png';
 
@@ -29,6 +30,7 @@ function App() {
     const [lastSessionData, setLastSessionData] = useState<any>(null);
     const [notebookTab, setNotebookTab] = useState<'vocabulary' | 'sessions'>('sessions');
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+    const [showDeadlinePopup, setShowDeadlinePopup] = useState(false);
     const [activeSession, setActiveSession] = useState<{
         category: string | null;
         startTime: number;
@@ -72,7 +74,7 @@ function App() {
                 setDaysLeft(Math.ceil(diff / (1000 * 3600 * 24)));
             }
 
-            const today = new Date().toISOString().split('T')[0];
+            const today = getLocalDateString();
             const total = (state.daily_logs || [])
                 .filter((log: any) => log.date === today)
                 .reduce((acc: number, log: any) => acc + (log.duration || 0), 0);
@@ -162,7 +164,7 @@ function App() {
             }
         } else if (category === 'vocabulary') {
             const state = await GetAppState();
-            const today = new Date().toISOString().split('T')[0];
+            const today = getLocalDateString();
             const words = (state.vocabulary || []).filter((v: any) => v.date_added === today);
             content = words.length > 0 ? "WORDS FORGED:\n" + words.map((w: any) => `- ${w.word.toUpperCase()}: ${w.def}`).join('\n') : "Vocabulary session.";
         } else if (category === 'speaking') {
@@ -191,6 +193,22 @@ function App() {
         // Update Summary view with the final extracted content
         setLastSessionData((prev: any) => prev ? { ...prev, data: { ...prev.data, content } } : prev);
         refreshAppState();
+    };
+
+    const getDeadlineMessage = () => {
+        if (!testDate) {
+            return "You haven't set a test date yet. Set one in Settings to track your progress!";
+        }
+        if (daysLeft <= 0) {
+            return "Your test date has passed or is today! Time to review and apply your knowledge.";
+        }
+        if (daysLeft <= 7) {
+            return `Your test is in ${daysLeft} day(s)! Focus on high-impact review and practice.`;
+        }
+        if (daysLeft <= 30) {
+            return `Your test is in ${daysLeft} days. Keep up the consistent effort and target your weaknesses.`;
+        }
+        return `Your test is in ${daysLeft} days. You have time to build a strong foundation. Stay consistent!`;
     };
 
     const navItems = [
@@ -261,11 +279,12 @@ function App() {
 
                         <button
                             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                            className="w-full flex items-center justify-center p-2 text-zinc-600 hover:text-white transition-colors"
+                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-zinc-500 hover:text-white hover:bg-zinc-900/50 ${sidebarCollapsed ? 'justify-center px-0' : ''}`}
                         >
                             <div className={`transition-transform duration-500 ${sidebarCollapsed ? 'rotate-180' : ''}`}>
-                                <ChevronLeft className="w-4 h-4" />
+                                <ChevronLeft className="w-5 h-5 shrink-0" />
                             </div>
+                            {!sidebarCollapsed && <span className="font-medium text-sm animate-in fade-in duration-500">Collapse Menu</span>}
                         </button>
                     </div>
                 </aside>
@@ -305,19 +324,27 @@ function App() {
                         </div>
 
                         {activeSession.category ? (
-                            <div className="flex items-center gap-3">
-                                <div className={`p-1.5 rounded-lg shadow-lg transition-colors ${activeSession.isActive ? 'bg-rose-500 shadow-rose-500/20' : 'bg-amber-500 shadow-amber-500/20'}`}>
-                                    <Zap className={`w-4 h-4 text-white ${activeSession.isActive ? 'animate-pulse' : ''}`} />
+                            !activeSession.isActive && (
+                                <div className="flex items-center gap-3">
+                                    <div className="p-1.5 rounded-lg shadow-lg transition-colors bg-amber-500 shadow-amber-500/20">
+                                        <Zap className="w-4 h-4 text-white" />
+                                    </div>
+                                    <div className="flex flex-col cursor-pointer" onClick={() => {
+                                        setCurrentPage('vault');
+                                        setVaultCategory(activeSession.category);
+                                    }}>
+                                        <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-white truncate max-w-[150px] group-hover:text-indigo-400 transition-colors">
+                                            {activeSession.category}
+                                        </span>
+                                        <span className="text-[8px] font-bold text-zinc-500 uppercase tracking-tighter group-hover:text-white transition-colors">Resume Session</span>
+                                    </div>
                                 </div>
-                                <div className="flex flex-col">
-                                    <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-white truncate max-w-[150px]">
-                                        {activeSession.isActive ? 'Focus:' : 'Paused:'} {activeSession.category}
-                                    </span>
-                                    {!activeSession.isActive && <span className="text-[8px] font-bold text-zinc-500 uppercase tracking-tighter">Session Ready</span>}
-                                </div>
-                            </div>
+                            )
                         ) : (
-                            <div className="glass px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl flex items-center gap-2 sm:gap-3">
+                            <div
+                                onClick={() => setShowDeadlinePopup(true)}
+                                className="glass px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl flex items-center gap-2 sm:gap-3 cursor-pointer hover:bg-white/5 transition-all"
+                            >
                                 <Clock className="w-4 h-4 text-indigo-400 shrink-0" />
                                 <span className="text-[10px] sm:text-sm font-semibold truncate max-w-[80px] sm:max-w-none">{testDate ? new Date(testDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }).toUpperCase() : 'SET DATE'}</span>
                                 <div className="w-px h-4 bg-zinc-700 hidden sm:block" />
@@ -331,10 +358,12 @@ function App() {
                     <div className="flex items-center gap-4">
                         {activeSession.category && (
                             <div className="flex items-center gap-2 sm:gap-4 animate-in fade-in slide-in-from-right duration-700">
-                                <div className="hidden lg:flex text-[10px] font-bold text-zinc-500 uppercase tracking-widest items-center gap-2">
-                                    <div className={`w-2 h-2 rounded-full ${activeSession.isActive ? 'bg-rose-500 animate-pulse' : 'bg-amber-500'}`} />
-                                    {activeSession.isActive ? 'Recording Progress' : 'Session Ready'}
-                                </div>
+                                {!activeSession.isActive && (
+                                    <div className="hidden lg:flex text-[10px] font-bold text-zinc-500 uppercase tracking-widest items-center gap-2">
+                                        <div className="w-2 h-2 rounded-full bg-amber-500" />
+                                        Paused
+                                    </div>
+                                )}
                                 <button
                                     onClick={handleFinish}
                                     className="px-4 sm:px-6 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-xl shadow-rose-500/20 border border-white/10"
@@ -347,7 +376,7 @@ function App() {
                 </header>
 
                 {/* Content Area */}
-                <div className="flex-1 overflow-y-auto p-4 sm:p-8 pt-2 sm:pt-4 pb-20 md:pb-8">
+                <div className={`flex-1 ${currentPage === 'dashboard' ? 'overflow-hidden' : 'overflow-y-auto'} p-4 sm:p-8 pt-2 sm:pt-4 pb-20 md:pb-8`}>
                     <AnimatePresence mode="wait">
                         <motion.div
                             key={currentPage}
@@ -376,6 +405,7 @@ function App() {
                                             }
                                         }
                                     }}
+                                    onShowDeadlinePopup={() => setShowDeadlinePopup(true)}
                                 />
                             )}
                             {currentPage === 'vault' && (
@@ -395,7 +425,7 @@ function App() {
                                             }
 
                                             // 2. Allow if we are starting a new session OR if we are currently in an active session
-                                            // This prevents "revival" because after Finish, prev.category is null, 
+                                            // This prevents "revival" because after Finish, prev.category is null,
                                             // and if data.isActive is not explicitly true, it won't pass.
                                             const isStarting = data.isActive === true;
                                             const isContinuing = prev.category !== null;
@@ -475,6 +505,42 @@ function App() {
                         </motion.div>
                     </AnimatePresence>
                 </div>
+
+                <AnimatePresence>
+                    {showDeadlinePopup && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setShowDeadlinePopup(false)}
+                            className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-6"
+                        >
+                            <motion.div
+                                initial={{ scale: 0.9, y: 20 }}
+                                animate={{ scale: 1, y: 0 }}
+                                exit={{ scale: 0.9, y: 20 }}
+                                onClick={(e) => e.stopPropagation()}
+                                className="glass max-w-sm w-full rounded-[2.5rem] p-8 border-indigo-500/30 text-center space-y-6"
+                            >
+                                <div className="w-16 h-16 bg-indigo-500/10 rounded-2xl flex items-center justify-center mx-auto border border-indigo-500/20">
+                                    <AlertCircle className="w-8 h-8 text-indigo-400" />
+                                </div>
+                                <div className="space-y-2">
+                                    <h3 className="text-xl font-black text-white uppercase italic tracking-tighter">Strategic Alert</h3>
+                                    <p className="text-zinc-400 text-sm font-medium leading-relaxed">
+                                        {getDeadlineMessage()}
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={() => setShowDeadlinePopup(false)}
+                                    className="w-full py-4 bg-indigo-600 text-white font-black uppercase tracking-widest text-[10px] rounded-2xl hover:bg-indigo-500 transition-all shadow-xl shadow-indigo-600/20"
+                                >
+                                    Focus & Execute
+                                </button>
+                            </motion.div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </main>
         </div>
     );

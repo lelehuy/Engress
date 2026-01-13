@@ -62,7 +62,7 @@ export function UpdateNotes(arg1:string):Promise<void>;
 
 export function UpdateProfileName(arg1:string):Promise<void>;
 
-export function UpdateReminders(arg1:boolean,arg2:string):Promise<void>;
+export function UpdateReminders(arg1:boolean,arg2:Array<string>):Promise<void>;
 
 export function UpdateTestDate(arg1:string):Promise<void>;
 

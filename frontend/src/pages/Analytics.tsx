@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { BarChart3, TrendingUp, Calendar, ChevronRight, Target, Brain, ShieldCheck, List, ChevronLeft, Flame, ArrowRight } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import { GetAppState, ExportData } from "../../wailsjs/go/main/App";
+import { getLocalDateString } from '../utils/dateUtils';
 import { getCategoryColorClass } from '../utils/categoryColors';
 
 const Analytics = ({ onNavigate }: { onNavigate: (page: string, params?: string, query?: string) => void }) => {
@@ -33,10 +34,10 @@ const Analytics = ({ onNavigate }: { onNavigate: (page: string, params?: string,
             // Calculate Current Streak
             let currentStreak = 0;
             const uniqueDates = Array.from(new Set(logs.map((l: any) => l.date))).sort().reverse();
-            const todayStr = new Date().toISOString().split('T')[0];
+            const todayStr = getLocalDateString();
             const yesterdayDate = new Date();
             yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-            const yesterdayStr = yesterdayDate.toISOString().split('T')[0];
+            const yesterdayStr = getLocalDateString(yesterdayDate);
 
             if (uniqueDates.length > 0) {
                 if (uniqueDates[0] === todayStr || uniqueDates[0] === yesterdayStr) {
@@ -60,7 +61,7 @@ const Analytics = ({ onNavigate }: { onNavigate: (page: string, params?: string,
             for (let i = 0; i < 7; i++) {
                 const targetDate = new Date();
                 targetDate.setDate(now.getDate() - (6 - i));
-                const dateStr = targetDate.toISOString().split('T')[0];
+                const dateStr = getLocalDateString(targetDate);
                 pulse[i] = logs
                     .filter((log: any) => log.date === dateStr)
                     .reduce((acc: number, log: any) => acc + (log.duration || 0), 0);

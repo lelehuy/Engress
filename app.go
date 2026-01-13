@@ -39,6 +39,9 @@ func (a *App) startup(ctx context.Context) {
 
 	// Start macOS Desktop HUD Helper
 	go func() {
+		// Clean up any existing instances first
+		exec.Command("pkill", "engress_hud").Run()
+		time.Sleep(200 * time.Millisecond)
 		exec.Command("./engress_hud").Run()
 	}()
 	go a.startHUDCommandListener()
@@ -119,9 +122,17 @@ func (a *App) StartScheduler() {
 			currentTime := fmt.Sprintf("%02d:%02d", hour, minute)
 			state, _ := a.LoadState()
 
-			shouldCheckTime := state.UserProfile.ReminderEnabled && currentTime == state.UserProfile.ReminderTime
+			isReminderTime := false
+			if state.UserProfile.ReminderEnabled {
+				for _, t := range state.UserProfile.ReminderTimes {
+					if t == currentTime {
+						isReminderTime = true
+						break
+					}
+				}
+			}
 
-			if shouldCheckTime {
+			if isReminderTime {
 				today := now.Format("2006-01-02")
 				todaysDuration := 0
 				for _, log := range state.DailyLogs {
@@ -427,10 +438,10 @@ func (a *App) UpdateProfileName(name string) {
 	a.SaveState(state)
 }
 
-func (a *App) UpdateReminders(enabled bool, time string) {
+func (a *App) UpdateReminders(enabled bool, reminderTimes []string) {
 	state, _ := a.LoadState()
 	state.UserProfile.ReminderEnabled = enabled
-	state.UserProfile.ReminderTime = time
+	state.UserProfile.ReminderTimes = reminderTimes
 	a.SaveState(state)
 }
 
@@ -542,7 +553,7 @@ func (a *App) startHUDNotesWatcher() {
 
 // GetAppVersion returns the current application version
 func (a *App) GetAppVersion() string {
-	return "v0.0.4"
+	return "v1.0.0"
 }
 
 type UpdateInfo struct {

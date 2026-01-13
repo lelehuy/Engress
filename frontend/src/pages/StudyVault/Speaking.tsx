@@ -189,7 +189,7 @@ const Speaking = ({ onBack, onFinish, initialData, onUpdate }: {
                         <div className="space-y-4">
                             <div className="flex items-center gap-3 px-3 py-1.5 bg-rose-500/10 text-rose-400 rounded-xl border border-rose-500/20 w-fit">
                                 <Lightbulb className="w-3.5 h-3.5" />
-                                <span className="text-[9px] font-black uppercase tracking-widest">Training Protocol</span>
+                                <span className="text-[9px] font-black uppercase tracking-widest">Training Instructions</span>
                             </div>
                             <div className="p-5 bg-zinc-900/50 rounded-[1.5rem] border border-white/5 relative overflow-hidden group">
                                 <p className="text-xs font-bold text-white mb-2 uppercase tracking-wide">Engress Brainstorm</p>

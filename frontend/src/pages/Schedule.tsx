@@ -158,7 +158,7 @@ const Schedule = ({ onNavigate }: ScheduleProps) => {
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between px-4 gap-4">
                         <div className="flex items-center gap-2">
                             <StickyNote className="w-5 h-5 text-indigo-400" />
-                            <h3 className="font-bold text-white uppercase tracking-tight italic">Focus History & Notes</h3>
+                            <h3 className="font-bold text-white uppercase tracking-tight italic">Focus History</h3>
                         </div>
 
                         <div className="flex items-center gap-2 bg-zinc-900/50 p-1.5 rounded-2xl border border-white/5">
