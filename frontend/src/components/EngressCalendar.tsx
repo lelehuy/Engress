@@ -49,7 +49,7 @@ const EngressCalendar = ({ selectedDate, onDateSelect, onClose }: EngressCalenda
             initial={{ opacity: 0, y: 10, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            className="glass p-6 rounded-[2rem] border-indigo-500/20 bg-zinc-950/90 backdrop-blur-xl shadow-2xl w-full max-w-[320px] select-none"
+            className="p-6 rounded-[2rem] border border-indigo-500/20 bg-zinc-950 shadow-2xl w-full max-w-[320px] select-none relative z-50"
         >
             <div className="flex items-center justify-between mb-6">
                 <button onClick={handlePrevMonth} className="p-2 hover:bg-white/5 rounded-xl transition-colors text-zinc-500 hover:text-white">

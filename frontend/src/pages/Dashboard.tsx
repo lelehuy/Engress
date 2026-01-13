@@ -122,7 +122,7 @@ const Dashboard = ({ onNavigate, activeSession, testDateProps, daysLeftProps, on
     const strategy = getMasteryStrategy(daysLeft);
 
     return (
-        <div className="h-full flex flex-col space-y-6 sm:space-y-8 animate-in fade-in duration-700 overflow-hidden">
+        <div className="h-full flex flex-col space-y-6 sm:space-y-8 animate-in fade-in duration-700 overflow-y-auto">
             {/* Command Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 shrink-0">
                 <div className="space-y-1">
@@ -184,7 +184,7 @@ const Dashboard = ({ onNavigate, activeSession, testDateProps, daysLeftProps, on
             </div>
 
             {/* Bento Grid Layout */}
-            <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-6 pb-2">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pb-6">
 
                 {/* Main Mission-Large Bento */}
                 <motion.div
@@ -194,7 +194,7 @@ const Dashboard = ({ onNavigate, activeSession, testDateProps, daysLeftProps, on
                         : 'from-indigo-600/30 to-zinc-950 border-indigo-500/30 shadow-[0_0_40px_rgba(99,102,241,0.1)]'
                         } `}
                 >
-                    <div className="p-6 sm:p-10 relative z-10 flex flex-col h-full min-h-[350px] md:min-h-0">
+                    <div className="p-6 relative z-10 flex flex-col h-full min-h-[350px] md:min-h-0">
                         <div className="flex items-center gap-3 font-black tracking-widest text-[10px] uppercase mb-4 sm:mb-6">
                             <div className={`p-2 rounded-xl ${todayMinutes < DAILY_GOAL ? 'bg-red-500/20 text-red-400' : 'bg-indigo-500/20 text-indigo-400'} `}>
                                 <ShieldCheck className="w-4 h-4" />
@@ -204,18 +204,18 @@ const Dashboard = ({ onNavigate, activeSession, testDateProps, daysLeftProps, on
                             </span>
                         </div>
 
-                        <h2 className="text-3xl sm:text-5xl font-black mb-3 sm:mb-4 text-white group-hover:text-indigo-200 transition-colors leading-tight tracking-tighter uppercase italic">
+                        <h2 className="text-2xl sm:text-5xl font-black mb-3 sm:mb-4 text-white group-hover:text-indigo-200 transition-colors leading-none tracking-tighter uppercase italic">
                             {todayMinutes < DAILY_GOAL ? 'IDENTITY CONFRONTATION' : 'Protocol Sustained'} <br />
-                            <span className={`${todayMinutes < DAILY_GOAL ? 'text-red-500/70' : 'text-emerald-400'} font-medium text-lg sm:text-2xl not-italic tracking-normal`}>
+                            <span className={`${todayMinutes < DAILY_GOAL ? 'text-red-500/70' : 'text-emerald-400'} font-medium text-base sm:text-2xl not-italic tracking-normal`}>
                                 {todayMinutes < DAILY_GOAL ? 'This is not who you are.' : 'You have honored the standard today.'}
                             </span>
                         </h2>
 
-                        <div className={`max-w-md leading-relaxed mb-6 sm:mb-8 flex-1 italic text-base sm:text-xl font-bold ${todayMinutes < DAILY_GOAL ? 'text-zinc-200' : 'text-zinc-400'} `}>
+                        <div className={`max-w-md leading-relaxed mb-6 sm:mb-8 flex-1 italic text-xs sm:text-xl font-bold ${todayMinutes < DAILY_GOAL ? 'text-zinc-200' : 'text-zinc-400'} `}>
                             "{todayMinutes < DAILY_GOAL ? engressBriefing : "The discipline of today is the victory of tomorrow. Continue your evolution or rest, knowing you are on track."}"
                         </div>
 
-                        <div className="flex items-center gap-6 mt-auto">
+                        <div className="flex items-center gap-6 mt-auto mb-2">
                             <button
                                 onClick={() => {
                                     const cat = activeSession.category || currentDayPlan.category;

@@ -118,7 +118,7 @@ const Onboarding = ({ onComplete }: OnboardingProps) => {
 
                                     <AnimatePresence>
                                         {showCalendar && (
-                                            <div className="absolute top-full left-0 right-0 mt-4 z-[100] flex justify-center">
+                                            <div className="absolute bottom-full left-0 right-0 mb-4 z-[100] flex justify-center">
                                                 <EngressCalendar
                                                     selectedDate={testDate}
                                                     onDateSelect={(date) => {

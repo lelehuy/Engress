@@ -134,11 +134,11 @@ const Notebook = ({ initialTab = 'sessions', initialSearch = '', initialId = nul
 
 
     return (
-        <div className="flex flex-col xl:flex-row h-full gap-4 sm:gap-8 overflow-hidden">
+        <div className="flex flex-col xl:flex-row h-full gap-4 sm:gap-8 overflow-y-auto">
             {/* Left: Archive Navigation */}
-            <div className={`w-full xl:w-[400px] flex flex-col gap-4 sm:gap-6 ${showDetail ? 'hidden xl:flex' : 'flex'}`}>
+            <div className={`w-full xl:w-[400px] min-h-0 flex flex-col gap-4 sm:gap-6 ${showDetail ? 'hidden xl:flex' : 'flex'}`}>
                 <div className="space-y-1">
-                    <h2 className="text-2xl sm:text-3xl font-black italic tracking-tighter text-white uppercase">Notebook</h2>
+                    <h2 className="text-4xl sm:text-5xl font-black italic tracking-tighter text-white uppercase">Notebook</h2>
                     <p className="text-[10px] sm:text-xs font-bold text-zinc-600 uppercase tracking-widest">All knowledge stored locally.</p>
                 </div>
 

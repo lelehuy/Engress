@@ -81,8 +81,8 @@ const Schedule = ({ onNavigate }: ScheduleProps) => {
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div className="flex flex-col gap-1">
-                <h1 className="text-4xl font-bold tracking-tight text-white">Smart Scheduler</h1>
-                <p className="text-zinc-500 font-medium italic">Strategic goals and historical insights.</p>
+                <h1 className="text-4xl sm:text-5xl font-black tracking-tighter text-white italic uppercase">SCHEDULE</h1>
+                <p className="text-zinc-500 font-bold uppercase tracking-widest text-[10px]">Strategic goals and historical insights.</p>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">

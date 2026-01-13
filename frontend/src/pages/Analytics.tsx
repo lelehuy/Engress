@@ -176,8 +176,8 @@ const Analytics = ({ onNavigate }: { onNavigate: (page: string, params?: string,
     return (
         <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
             <div className="flex flex-col gap-1">
-                <h1 className="text-4xl font-bold tracking-tight text-white">Daily Preparation Logic</h1>
-                <p className="text-zinc-500 font-medium italic">Strategic milestones calibrated to your {testDate?.toLocaleDateString()} exam.</p>
+                <h1 className="text-4xl sm:text-5xl font-black tracking-tighter text-white italic uppercase">ANALYTICS</h1>
+                <p className="text-zinc-500 font-bold uppercase tracking-widest text-[10px]">Strategic milestones calibrated to your {testDate?.toLocaleDateString()} exam.</p>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">

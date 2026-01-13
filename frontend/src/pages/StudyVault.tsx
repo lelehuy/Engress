@@ -127,8 +127,8 @@ const StudyVault = ({ initialCategory, sessionState, onUpdateSession, onTriggerR
     return (
         <div className="space-y-8 sm:space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700 max-w-6xl mx-auto p-4 sm:p-8">
             <div className="flex flex-col gap-1">
-                <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white uppercase italic">Focus Lab</h1>
-                <p className="text-zinc-500 text-sm sm:text-base font-medium italic">High-performance tools for your self-study preparation.</p>
+                <h1 className="text-4xl sm:text-5xl font-black tracking-tighter text-white italic uppercase">Focus Lab</h1>
+                <p className="text-zinc-500 font-bold uppercase tracking-widest text-[10px]">High-performance tools for your self-study preparation.</p>
             </div>
 
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-8">

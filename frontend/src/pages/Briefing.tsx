@@ -136,7 +136,7 @@ const Briefing = ({ onComplete }: { onComplete: () => void }) => {
                                 className="space-y-4"
                             >
                                 <p className="text-xs font-black text-indigo-400 uppercase tracking-[0.3em]">{current.subtitle}</p>
-                                <h1 className="text-3xl md:text-5xl font-black text-white italic uppercase tracking-tighter leading-none">
+                                <h1 className="text-4xl sm:text-5xl font-black text-white italic uppercase tracking-tighter leading-none">
                                     {current.title.split(' ')[0]} <br />
                                     <span className="text-zinc-600">{current.title.split(' ').slice(1).join(' ')}</span>
                                 </h1>
