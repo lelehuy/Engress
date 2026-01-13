@@ -65,7 +65,7 @@ const Writing = ({ onBack, onFinish, initialData, onUpdate }: {
             });
         }
         UpdateNotes(activeData.notes);
-    }, [taskType, duration, submittedEssays, task1Data, task2Data, onUpdate, activeData.notes]);
+    }, [taskType, duration, submittedEssays, task1Data, task2Data, activeData.notes]); // Removed onUpdate
 
     useEffect(() => {
         const handleBlur = () => {
@@ -86,7 +86,6 @@ const Writing = ({ onBack, onFinish, initialData, onUpdate }: {
             window.removeEventListener('blur', handleBlur);
             window.removeEventListener('focus', handleFocus);
             unlisten();
-            SetSessionCategory("HIDDEN");
             SetHUDScratchpadVisible(false);
         };
     }, []);

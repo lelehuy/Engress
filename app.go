@@ -183,6 +183,8 @@ func (a *App) SetPauseState(paused bool) {
 		})
 		// Force HUD update immediately
 		os.WriteFile("/tmp/sentinel_timer.txt", []byte("HIDDEN"), 0644)
+	} else {
+		a.UpdateTrayTime(a.currentTimeStr)
 	}
 }
 
@@ -207,6 +209,7 @@ func (a *App) startHUDCommandListener() {
 					runtime.WindowShow(a.ctx)
 				case "HIDE_SCRATCHPAD":
 					a.isHUDScratchpadVisible = false
+					a.UpdateTrayTime(a.currentTimeStr)
 				}
 			}
 		}

@@ -106,8 +106,9 @@ class ScratchpadHUD: NSPanel, NSTextViewDelegate {
     override var canBecomeMain: Bool { return true }
     
     @objc func hideMe() {
-        AppDelegate.shared?.sendCommand("HIDE_SCRATCHPAD")
         self.alphaValue = 0.0
+        self.setIsVisible(false)
+        AppDelegate.shared?.sendCommand("HIDE_SCRATCHPAD")
     }
     
     func textDidChange(_ notification: Notification) {
@@ -235,9 +236,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             let trimmed = content.trimmingCharacters(in: .whitespacesAndNewlines)
             let parts = trimmed.components(separatedBy: "|")
             
+            let upperTrimmed = trimmed.uppercased()
             let isHidden = trimmed.isEmpty || 
-                           trimmed.uppercased().contains("HIDDEN") || 
-                           (parts.count > 0 && parts[0].trimmingCharacters(in: .whitespacesAndNewlines).uppercased() == "HIDDEN")
+                           upperTrimmed == "HIDDEN" || 
+                           upperTrimmed == "HIDE" ||
+                           (parts.count > 0 && (parts[0].trimmingCharacters(in: .whitespacesAndNewlines).uppercased() == "HIDDEN" || parts[0].trimmingCharacters(in: .whitespacesAndNewlines).uppercased() == "HIDE"))
             
             if isHidden {
                 timerWindow?.alphaValue = 0.0

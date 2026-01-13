@@ -116,6 +116,7 @@ const StudyVault = ({ initialCategory, sessionState, onUpdateSession, onTriggerR
         return <Reading
             onBack={handleBack}
             onFinish={(dur) => onTriggerReflection(dur)}
+            category={activeCategory || 'reading'}
             initialData={sessionState.category === activeCategory ? sessionState.data : null}
             onUpdate={(data: any) => onUpdateSession({ ...data, category: activeCategory })}
         />;

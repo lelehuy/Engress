@@ -42,7 +42,7 @@ const Speaking = ({ onBack, onFinish, initialData, onUpdate }: {
             });
         }
         UpdateNotes(notes);
-    }, [isRecording, duration, hasRecording, sourceUrl, screenshot, title, notes, audioUrl, onUpdate]);
+    }, [isRecording, duration, hasRecording, sourceUrl, screenshot, title, notes, audioUrl]); // Removed onUpdate
 
     useEffect(() => {
         const handleBlur = () => {
@@ -63,7 +63,6 @@ const Speaking = ({ onBack, onFinish, initialData, onUpdate }: {
             window.removeEventListener('blur', handleBlur);
             window.removeEventListener('focus', handleFocus);
             unlisten();
-            SetSessionCategory("HIDDEN");
             SetHUDScratchpadVisible(false);
         };
     }, []);

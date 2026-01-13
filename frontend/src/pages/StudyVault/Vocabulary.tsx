@@ -20,7 +20,7 @@ const Vocabulary = ({ onBack, onFinish, initialData, onUpdate }: {
     useEffect(() => {
         if (onUpdate) onUpdate({ word, definition, sentences, duration, notes });
         UpdateNotes(notes);
-    }, [word, definition, sentences, duration, notes, onUpdate]);
+    }, [word, definition, sentences, duration, notes]); // Removed onUpdate
 
     useEffect(() => {
         SetSessionCategory("VOCABULARY");
@@ -42,7 +42,6 @@ const Vocabulary = ({ onBack, onFinish, initialData, onUpdate }: {
             window.removeEventListener('blur', handleBlur);
             window.removeEventListener('focus', handleFocus);
             unlisten();
-            SetSessionCategory("HIDDEN");
             SetHUDScratchpadVisible(false);
         };
     }, []);

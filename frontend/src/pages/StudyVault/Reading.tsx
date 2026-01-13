@@ -5,13 +5,14 @@ import SessionTimer from '../../components/SessionTimer';
 import { GetAppState, UpdateNotes, SetHUDScratchpadVisible, SetSessionCategory } from "../../../wailsjs/go/main/App";
 import { EventsOn } from '../../../wailsjs/runtime/runtime';
 
-const Reading = ({ onBack, onFinish, initialData, onUpdate }: {
+const Reading = ({ onBack, onFinish, category, initialData, onUpdate }: {
     onBack: () => void;
     onFinish: (duration: number) => void;
+    category: string;
     initialData?: any;
     onUpdate?: (data: any) => void;
 }) => {
-    const categoryName = initialData?.category || 'Reading';
+    const categoryName = category.charAt(0).toUpperCase() + category.slice(1);
     const [duration, setSeconds] = useState(initialData?.duration || 0);
     const [rawScore, setRawScore] = useState(initialData?.rawScore || 0);
     const [sourceUrl, setSourceUrl] = useState(initialData?.sourceUrl || '');
@@ -42,9 +43,9 @@ const Reading = ({ onBack, onFinish, initialData, onUpdate }: {
     }, [initialData?.category, categoryName]);
 
     useEffect(() => {
-        if (onUpdate) onUpdate({ duration, rawScore, sourceUrl, screenshot, examMode, notes });
+        onUpdate?.({ duration, rawScore, sourceUrl, screenshot, examMode, notes });
         UpdateNotes(notes);
-    }, [duration, rawScore, sourceUrl, screenshot, examMode, notes, onUpdate]);
+    }, [duration, rawScore, sourceUrl, screenshot, examMode, notes]); // Removed onUpdate to break the render loop
 
     useEffect(() => {
         const handleBlur = () => {
@@ -65,8 +66,7 @@ const Reading = ({ onBack, onFinish, initialData, onUpdate }: {
             window.removeEventListener('blur', handleBlur);
             window.removeEventListener('focus', handleFocus);
             unlisten();
-            SetSessionCategory("HIDDEN");
-            SetHUDScratchpadVisible(false);
+            // App.tsx handles global HUD visibility based on activeSession.isActive
         };
     }, []);
 
