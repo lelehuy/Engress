@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { BookOpen, Clock, AlertCircle, ChevronLeft, Save, Layout, List, Info, Trophy, ArrowRight, TrendingUp, Calculator, Target, ExternalLink, Share2, X, Mic, PenTool } from 'lucide-react';
 import { motion } from 'framer-motion';
 import SessionTimer from '../../components/SessionTimer';
-import { GetAppState, UpdateNotes, SetHUDScratchpadVisible } from "../../../wailsjs/go/main/App";
+import { GetAppState, UpdateNotes, SetHUDScratchpadVisible, SetSessionCategory } from "../../../wailsjs/go/main/App";
 import { EventsOn } from '../../../wailsjs/runtime/runtime';
 
 const Reading = ({ onBack, onFinish, initialData, onUpdate }: {
@@ -38,7 +38,8 @@ const Reading = ({ onBack, onFinish, initialData, onUpdate }: {
             }
         };
         fetchStats();
-    }, [initialData?.category]);
+        SetSessionCategory(categoryName.toUpperCase());
+    }, [initialData?.category, categoryName]);
 
     useEffect(() => {
         if (onUpdate) onUpdate({ duration, rawScore, sourceUrl, screenshot, examMode, notes });
@@ -47,9 +48,7 @@ const Reading = ({ onBack, onFinish, initialData, onUpdate }: {
 
     useEffect(() => {
         const handleBlur = () => {
-            if (categoryName.toLowerCase() === 'listening') {
-                SetHUDScratchpadVisible(true);
-            }
+            SetHUDScratchpadVisible(true);
         };
         const handleFocus = () => {
             SetHUDScratchpadVisible(false);
@@ -66,9 +65,10 @@ const Reading = ({ onBack, onFinish, initialData, onUpdate }: {
             window.removeEventListener('blur', handleBlur);
             window.removeEventListener('focus', handleFocus);
             unlisten();
+            SetSessionCategory("HIDDEN");
             SetHUDScratchpadVisible(false);
         };
-    }, [categoryName]);
+    }, []);
 
     const calculateBand = (raw: number) => {
 

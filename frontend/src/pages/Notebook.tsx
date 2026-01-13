@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Calendar as CalendarIcon, Clock, ChevronRight, Book, Lightbulb, X, Image as ImageIcon, ExternalLink, ChevronLeft, PenTool, Mic, BookOpen, Headphones, Trophy, Zap, Trash2 } from 'lucide-react';
 import { GetAppState, DeleteLog, DeleteVocabulary, Notify } from "../../wailsjs/go/main/App";
@@ -12,7 +12,7 @@ const Notebook = ({ initialTab = 'sessions', initialSearch = '', initialId = nul
     const [showDetail, setShowDetail] = useState(false);
     const [searchQuery, setSearchQuery] = useState(initialSearch);
     const [selectedItem, setSelectedItem] = useState<any>(null);
-    const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+    const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
     const [vocabList, setVocabList] = useState<any[]>([]);
     const [sessionLogs, setSessionLogs] = useState<any[]>([]);
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -35,14 +35,25 @@ const Notebook = ({ initialTab = 'sessions', initialSearch = '', initialId = nul
         setSearchQuery(initialSearch);
     }, [initialTab, initialSearch]);
 
+    const processedInitialId = useRef<string | null>(null);
+
+    // Reset processed ref when initialId prop actually changes (e.g. new navigation)
     useEffect(() => {
-        if (initialId && (sessionLogs.length > 0 || vocabList.length > 0)) {
+        if (initialId !== processedInitialId.current) {
+            processedInitialId.current = null;
+        }
+    }, [initialId]);
+
+    useEffect(() => {
+        // Only process if we have an ID, we haven't processed it yet, and data is loaded.
+        if (initialId && processedInitialId.current !== initialId && (sessionLogs.length > 0 || vocabList.length > 0)) {
             // Check logs first
             let item = sessionLogs.find(l => l.id === initialId);
             if (item) {
                 setSelectedItem(item);
                 setShowDetail(true);
                 if (item.module) setSelectedCategory(item.module.toLowerCase());
+                processedInitialId.current = initialId;
                 return;
             }
 
@@ -52,38 +63,51 @@ const Notebook = ({ initialTab = 'sessions', initialSearch = '', initialId = nul
                 setSelectedItem({ ...item, type: 'vocab' });
                 setShowDetail(true);
                 setActiveTab('vocabulary');
+                processedInitialId.current = initialId;
             }
         }
     }, [initialId, sessionLogs.length, vocabList.length]);
 
     useEffect(() => {
-        setIsConfirmingDelete(false);
+        setConfirmDeleteId(null);
     }, [selectedItem]);
 
-    const handleDelete = async () => {
-        if (!selectedItem) return;
+    const handleDelete = async (targetItem?: any, e?: React.MouseEvent) => {
+        if (e) e.stopPropagation();
+        const itemToDelete = targetItem || selectedItem;
+        if (!itemToDelete) return;
+
+        // If it's from the list and not already confirming, arm the confirmation
+        if (targetItem && confirmDeleteId !== itemToDelete.id) {
+            setConfirmDeleteId(itemToDelete.id);
+            // Reset after 3 seconds
+            setTimeout(() => setConfirmDeleteId(null), 3000);
+            return;
+        }
 
         try {
-            const isVocab = selectedItem.type === 'vocab' || (!selectedItem.module && selectedItem.word);
-            console.log("Attempting to delete ID:", selectedItem.id, "Type:", isVocab ? "Vocab" : "Log");
+            const isVocab = itemToDelete.type === 'vocab' || (!itemToDelete.module && itemToDelete.word);
 
             if (isVocab) {
-                await DeleteVocabulary(selectedItem.id);
+                await DeleteVocabulary(itemToDelete.id);
             } else {
-                if (selectedItem.id) {
-                    await DeleteLog(selectedItem.id);
+                if (itemToDelete.id) {
+                    await DeleteLog(itemToDelete.id);
                 } else {
-                    alert("This is an older legacy log without a unique ID and cannot be deleted individually. Only new logs support deletion.");
+                    alert("Older legacy log cannot be deleted individually.");
                     return;
                 }
             }
 
-            setSelectedItem(null);
-            setShowDetail(false);
+            if (selectedItem?.id === itemToDelete.id) {
+                setSelectedItem(null);
+                setShowDetail(false);
+            }
+            setConfirmDeleteId(null);
             await fetchData();
+            Notify("Entry Erased", "Notebook has been updated.");
         } catch (error) {
-            console.error("Failed to delete entry:", error);
-            alert("System error preventing deletion. Please check logs.");
+            console.error("Delete failed:", error);
         }
     };
 
@@ -293,21 +317,35 @@ const Notebook = ({ initialTab = 'sessions', initialSearch = '', initialId = nul
                                         }
 
                                         return (
-                                            <button
-                                                key={i}
-                                                onClick={() => { setSelectedItem({ ...log, type: 'session' }); setShowDetail(true); }}
-                                                className={`w-full glass p-4 sm:p-5 rounded-3xl text-left transition-all border group ${selectedItem?.id === log.id ? 'bg-white/10 border-indigo-500/30' : 'border-transparent hover:bg-white/5'}`}
-                                            >
-                                                <div className="flex justify-between items-start mb-2">
-                                                    <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${getCategoryColorClass(log.module, 'fill')}${getCategoryColorClass(log.module, 'border')}${getCategoryColorClass(log.module, 'text')}`}>
-                                                        {displayTitle}
-                                                    </span>
-                                                    <span className="text-[9px] font-mono text-zinc-600">{log.date}</span>
-                                                </div>
-                                                <p className="text-[10px] sm:text-xs text-zinc-400 line-clamp-2 font-medium leading-relaxed italic border-l-2 border-indigo-500/20 pl-3">
-                                                    {displaySub}
-                                                </p>
-                                            </button>
+                                            <div key={i} className="relative group">
+                                                <button
+                                                    onClick={() => { setSelectedItem({ ...log, type: 'session' }); setShowDetail(true); }}
+                                                    className={`w-full glass p-4 sm:p-5 rounded-3xl text-left transition-all border group ${selectedItem?.id === log.id ? 'bg-white/10 border-indigo-500/30' : 'border-transparent hover:bg-white/5'}`}
+                                                >
+                                                    <div className="flex justify-between items-start mb-2 pr-8">
+                                                        <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${getCategoryColorClass(log.module, 'fill')}${getCategoryColorClass(log.module, 'border')}${getCategoryColorClass(log.module, 'text')}`}>
+                                                            {displayTitle}
+                                                        </span>
+                                                        <span className="text-[9px] font-mono text-zinc-600 uppercase">{log.date} @ {log.time || '--:--'}</span>
+                                                    </div>
+                                                    <p className="text-[10px] sm:text-xs text-zinc-400 line-clamp-2 font-medium leading-relaxed italic border-l-2 border-indigo-500/20 pl-3">
+                                                        {displaySub}
+                                                    </p>
+                                                </button>
+                                                <button
+                                                    onClick={(e) => handleDelete(log, e)}
+                                                    className={`absolute top-4 right-4 p-2 rounded-xl transition-all z-20 ${confirmDeleteId === log.id
+                                                        ? 'bg-rose-500 text-white scale-110 opacity-100'
+                                                        : 'text-zinc-700 hover:text-rose-500 opacity-0 group-hover:opacity-100'}`}
+                                                    title={confirmDeleteId === log.id ? "Click again to confirm" : "Quick Erase"}
+                                                >
+                                                    {confirmDeleteId === log.id ? (
+                                                        <Trash2 className="w-4 h-4 animate-bounce" />
+                                                    ) : (
+                                                        <Trash2 className="w-3.5 h-3.5" />
+                                                    )}
+                                                </button>
+                                            </div>
                                         );
                                     })
                                 )}
@@ -321,17 +359,31 @@ const Notebook = ({ initialTab = 'sessions', initialSearch = '', initialId = nul
                                 className="space-y-3"
                             >
                                 {filteredVocab.map((item, i) => (
-                                    <button
-                                        key={i}
-                                        onClick={() => { setSelectedItem({ ...item, type: 'vocab' }); setShowDetail(true); }}
-                                        className={`w-full glass p-4 sm:p-6 rounded-3xl text-left transition-all border group ${selectedItem?.id === item.id ? 'bg-white/10 border-emerald-500/30' : 'border-transparent hover:bg-white/5'}`}
-                                    >
-                                        <div className="flex justify-between items-start mb-3">
-                                            <h4 className="text-base sm:text-lg font-black italic text-white tracking-tight uppercase group-hover:text-emerald-400 transition-colors">{item.word}</h4>
-                                            <span className="text-[9px] font-mono text-zinc-600 uppercase tracking-widest">{item.date_added}</span>
-                                        </div>
-                                        <p className="text-[10px] sm:text-xs text-zinc-500 line-clamp-2 font-medium leading-relaxed">{item.def}</p>
-                                    </button>
+                                    <div key={i} className="relative group">
+                                        <button
+                                            onClick={() => { setSelectedItem({ ...item, type: 'vocab' }); setShowDetail(true); }}
+                                            className={`w-full glass p-4 sm:p-6 rounded-3xl text-left transition-all border group ${selectedItem?.id === item.id ? 'bg-white/10 border-emerald-500/30' : 'border-transparent hover:bg-white/5'}`}
+                                        >
+                                            <div className="flex justify-between items-start mb-3 pr-8">
+                                                <h4 className="text-base sm:text-lg font-black italic text-white tracking-tight uppercase group-hover:text-emerald-400 transition-colors">{item.word}</h4>
+                                                <span className="text-[9px] font-mono text-zinc-600 uppercase tracking-widest">{item.date_added} @ {item.time || '--:--'}</span>
+                                            </div>
+                                            <p className="text-[10px] sm:text-xs text-zinc-500 line-clamp-2 font-medium leading-relaxed">{item.def}</p>
+                                        </button>
+                                        <button
+                                            onClick={(e) => handleDelete(item, e)}
+                                            className={`absolute top-6 right-6 p-2 rounded-xl transition-all z-20 ${confirmDeleteId === item.id
+                                                ? 'bg-rose-500 text-white scale-110 opacity-100'
+                                                : 'text-zinc-700 hover:text-rose-500 opacity-0 group-hover:opacity-100'}`}
+                                            title={confirmDeleteId === item.id ? "Click again to confirm" : "Quick Erase"}
+                                        >
+                                            {confirmDeleteId === item.id ? (
+                                                <Trash2 className="w-5 h-5 animate-bounce" />
+                                            ) : (
+                                                <Trash2 className="w-4 h-4" />
+                                            )}
+                                        </button>
+                                    </div>
                                 ))}
                             </motion.div>
                         )}
@@ -360,7 +412,7 @@ const Notebook = ({ initialTab = 'sessions', initialSearch = '', initialId = nul
                                 <div className="space-y-6 border-b border-white/5 pb-12">
                                     <div className="flex items-center gap-3">
                                         <span className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">Vocabulary Entry</span>
-                                        <span className="text-zinc-500 text-xs font-mono">{selectedItem.date_added}</span>
+                                        <span className="text-zinc-500 text-xs font-mono">{selectedItem.date_added} @ {selectedItem.time || '--:--'}</span>
                                     </div>
                                     <h1 className="text-4xl sm:text-5xl xl:text-7xl font-black text-white italic tracking-tighter uppercase break-words leading-none">{selectedItem.word}</h1>
                                 </div>
@@ -392,7 +444,7 @@ const Notebook = ({ initialTab = 'sessions', initialSearch = '', initialId = nul
                                         <span className={`px-3 py-1 rounded-full border text-[10px] font-black uppercase tracking-widest ${getCategoryColorClass(selectedItem.module, 'fill')}${getCategoryColorClass(selectedItem.module, 'border')}${getCategoryColorClass(selectedItem.module, 'text')}`}>
                                             {selectedItem.module || 'General'} Session
                                         </span>
-                                        <span className="text-zinc-500 text-xs font-mono">{selectedItem.date}</span>
+                                        <span className="text-zinc-500 text-xs font-mono">{selectedItem.date} @ {selectedItem.time || '--:--'}</span>
                                     </div>
                                     <h1 className="text-4xl font-bold text-white tracking-tight">
                                         {selectedItem.content ? (
@@ -559,16 +611,16 @@ const Notebook = ({ initialTab = 'sessions', initialSearch = '', initialId = nul
                                             <p className="text-xs text-zinc-500">Permanently delete this entry from your Notebook.</p>
                                         </div>
                                         <div className="flex items-center gap-3">
-                                            {isConfirmingDelete ? (
+                                            {confirmDeleteId === selectedItem.id ? (
                                                 <>
                                                     <button
-                                                        onClick={() => setIsConfirmingDelete(false)}
+                                                        onClick={() => setConfirmDeleteId(null)}
                                                         className="px-4 py-2 bg-zinc-800 text-zinc-400 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
                                                     >
                                                         Cancel
                                                     </button>
                                                     <button
-                                                        onClick={handleDelete}
+                                                        onClick={(e) => handleDelete(selectedItem, e)}
                                                         className="px-6 py-3 bg-red-600 hover:bg-red-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 shadow-lg shadow-red-600/20 animate-pulse"
                                                     >
                                                         <Trash2 className="w-4 h-4" />
@@ -577,7 +629,7 @@ const Notebook = ({ initialTab = 'sessions', initialSearch = '', initialId = nul
                                                 </>
                                             ) : (
                                                 <button
-                                                    onClick={() => setIsConfirmingDelete(true)}
+                                                    onClick={() => setConfirmDeleteId(selectedItem.id)}
                                                     className="px-6 py-3 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 group"
                                                 >
                                                     <Trash2 className="w-4 h-4 group-hover:animate-bounce" />

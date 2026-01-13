@@ -10,14 +10,16 @@ interface DashboardProps {
     activeSession: { category: string | null; isActive: boolean; };
     testDateProps: string | null;
     daysLeftProps: number;
+    todayMinutesProps: number;
     onShowDeadlinePopup?: () => void;
 }
 
-const Dashboard = ({ onNavigate, activeSession, testDateProps, daysLeftProps, onShowDeadlinePopup }: DashboardProps) => {
+const Dashboard = ({ onNavigate, activeSession, testDateProps, daysLeftProps, todayMinutesProps, onShowDeadlinePopup }: DashboardProps) => {
     const [missionAccepted, setMissionAccepted] = useState(false);
     const [testDate, setTestDate] = useState<Date | null>(testDateProps ? new Date(testDateProps) : null);
     const [daysLeft, setDaysLeft] = useState(daysLeftProps);
-    const [todayMinutes, setTodayMinutes] = useState(0);
+    // todayMinutes is now driven by props to ensure sync with header
+    const todayMinutes = todayMinutesProps;
     const [tomorrowFocus, setTomorrowFocus] = useState('Determine during ritual');
     const [lastScore, setLastScore] = useState<number | null>(null);
     const [weeklyPulse, setWeeklyPulse] = useState<number[]>(new Array(7).fill(0));
@@ -71,10 +73,9 @@ const Dashboard = ({ onNavigate, activeSession, testDateProps, daysLeftProps, on
             }
             setStreak(currentStreak);
 
-            const total = logs
-                .filter((log: any) => log.date === today)
-                .reduce((acc: number, log: any) => acc + (log.duration || 0), 0);
-            setTodayMinutes(total);
+            setStreak(currentStreak);
+
+            // todayMinutes is now passed from App.tsxMain to ensure sync with header
 
             if (logs.length > 0) {
                 const lastLog = logs[logs.length - 1];

@@ -23,6 +23,12 @@ const StudyVault = ({ initialCategory, sessionState, onUpdateSession, onTriggerR
     const [totalHours, setTotalHours] = useState(0);
 
     useEffect(() => {
+        if (initialCategory) {
+            onUpdateSession({ category: initialCategory, isActive: true });
+        }
+    }, []);
+
+    useEffect(() => {
         GetAppState().then(state => {
             const logs = state.daily_logs || [];
             const totalMin = logs.reduce((acc: number, l: any) => acc + (l.duration || 0), 0);

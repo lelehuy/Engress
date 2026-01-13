@@ -30,6 +30,7 @@ type DailyLog struct {
 	Content    string  `json:"content"`    // Actual work (essays, notes, etc.)
 	SourceURL  string  `json:"source_url"` // Original question URL
 	Screenshot string  `json:"screenshot"` // Base64 encoded image
+	Time       string  `json:"time"`       // "15:04"
 }
 
 type VocabItem struct {
@@ -38,6 +39,7 @@ type VocabItem struct {
 	Def       string `json:"def"`
 	Sentences string `json:"sentences"` // Stored as newline separated
 	DateAdded string `json:"date_added"`
+	Time      string `json:"time"`
 }
 
 type AppState struct {

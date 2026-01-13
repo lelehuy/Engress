@@ -47,13 +47,6 @@ func (a *App) startup(ctx context.Context) {
 	go a.startHUDCommandListener()
 	go a.startHUDNotesWatcher()
 
-	// Wails Window Events for HUD auto-close
-	runtime.EventsOn(ctx, "wails:window-active", func(optionalData ...interface{}) {
-		if a.isHUDScratchpadVisible {
-			a.SetHUDScratchpadVisible(false)
-		}
-	})
-
 	// Daily Alert Logic
 	state, _ := a.LoadState()
 	today := time.Now().Format("2006-01-02")
@@ -95,6 +88,7 @@ func (a *App) LogSession(category string, reflection string, score float64, home
 		Content:    content,
 		SourceURL:  sourceURL,
 		Screenshot: screenshot,
+		Time:       time.Now().Format("15:04"),
 	})
 	a.SaveState(state)
 }
@@ -221,6 +215,7 @@ func (a *App) startHUDCommandListener() {
 
 func (a *App) SetSessionCategory(category string) {
 	a.currentCategory = category
+	a.UpdateTrayTime(a.currentTimeStr)
 }
 
 func (a *App) GetConsistencyPhase() string {
@@ -363,6 +358,7 @@ func (a *App) AddVocabulary(word string, def string, sentences string) {
 		Def:       def,
 		Sentences: sentences,
 		DateAdded: time.Now().Format("2006-01-02"),
+		Time:      time.Now().Format("15:04"),
 	}
 	state.Vocabulary = append(state.Vocabulary, item)
 	a.SaveState(state)

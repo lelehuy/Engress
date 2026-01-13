@@ -254,6 +254,10 @@ function App() {
                                 onClick={() => {
                                     setVaultCategory(null);
                                     setCurrentPage(item.id);
+                                    if (item.id === 'notebook') {
+                                        setNotebookItemId(null);
+                                        setNotebookSearch('');
+                                    }
                                 }}
                                 title={sidebarCollapsed ? item.label : ""}
                                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${currentPage === item.id
@@ -300,6 +304,10 @@ function App() {
                             onClick={() => {
                                 setVaultCategory(null);
                                 setCurrentPage(item.id);
+                                if (item.id === 'notebook') {
+                                    setNotebookItemId(null);
+                                    setNotebookSearch('');
+                                }
                             }}
                             className={`flex flex-col items-center justify-center gap-1 transition-all ${currentPage === item.id ? 'text-indigo-400 scale-110' : 'text-zinc-500'}`}
                         >
@@ -391,6 +399,7 @@ function App() {
                                     activeSession={activeSession}
                                     testDateProps={testDate}
                                     daysLeftProps={daysLeft}
+                                    todayMinutesProps={todayMinutes}
                                     onNavigate={(page: string, params?: string, query?: string) => {
                                         setCurrentPage(page);
                                         if (page === 'vault' && params) setVaultCategory(params);

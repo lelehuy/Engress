@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { PenTool, Mic, BookOpen, Clock, AlertCircle, ChevronLeft, Type, Layout, Sidebar, Search, Lightbulb, Star, Info, Share2, MoreHorizontal, Save, ExternalLink, X } from 'lucide-react';
 import SessionTimer from '../../components/SessionTimer';
 import { preparationTips } from '../../data/prepTips';
+import { UpdateNotes, SetHUDScratchpadVisible, SetSessionCategory } from "../../../wailsjs/go/main/App";
+import { EventsOn } from '../../../wailsjs/runtime/runtime';
 
 const Writing = ({ onBack, onFinish, initialData, onUpdate }: {
     onBack: () => void;
@@ -21,14 +23,16 @@ const Writing = ({ onBack, onFinish, initialData, onUpdate }: {
         text: initialData?.taskType === 'task1' ? initialData.text || '' : '',
         premise: initialData?.taskType === 'task1' ? initialData.premise || '' : '',
         screenshot: initialData?.taskType === 'task1' ? initialData.screenshot || '' : '',
-        sourceUrl: initialData?.taskType === 'task1' ? initialData.sourceUrl || '' : ''
+        sourceUrl: initialData?.taskType === 'task1' ? initialData.sourceUrl || '' : '',
+        notes: initialData?.taskType === 'task1' ? initialData.notes || '' : ''
     });
 
     const [task2Data, setTask2Data] = useState(initialData?.task2Data || {
         text: initialData?.taskType === 'task2' || !initialData?.taskType ? initialData?.text || '' : '',
         premise: initialData?.taskType === 'task2' || !initialData?.taskType ? initialData?.premise || '' : '',
         screenshot: initialData?.taskType === 'task2' || !initialData?.taskType ? initialData?.screenshot || '' : '',
-        sourceUrl: initialData?.taskType === 'task2' || !initialData?.taskType ? initialData?.sourceUrl || '' : ''
+        sourceUrl: initialData?.taskType === 'task2' || !initialData?.taskType ? initialData?.sourceUrl || '' : '',
+        notes: initialData?.taskType === 'task2' || !initialData?.taskType ? initialData?.notes || '' : ''
     });
 
     const activeData = taskType === 'task1' ? task1Data : task2Data;
@@ -56,10 +60,40 @@ const Writing = ({ onBack, onFinish, initialData, onUpdate }: {
                 text: activeData.text,
                 premise: activeData.premise,
                 sourceUrl: activeData.sourceUrl,
-                screenshot: activeData.screenshot
+                screenshot: activeData.screenshot,
+                notes: activeData.notes
             });
         }
-    }, [taskType, duration, submittedEssays, task1Data, task2Data, onUpdate]);
+        UpdateNotes(activeData.notes);
+    }, [taskType, duration, submittedEssays, task1Data, task2Data, onUpdate, activeData.notes]);
+
+    useEffect(() => {
+        const handleBlur = () => {
+            SetHUDScratchpadVisible(true);
+        };
+        const handleFocus = () => {
+            SetHUDScratchpadVisible(false);
+        };
+
+        window.addEventListener('blur', handleBlur);
+        window.addEventListener('focus', handleFocus);
+
+        const unlisten = EventsOn("hud-notes-update", (newNotes: string) => {
+            updateActiveData({ notes: newNotes });
+        });
+
+        return () => {
+            window.removeEventListener('blur', handleBlur);
+            window.removeEventListener('focus', handleFocus);
+            unlisten();
+            SetSessionCategory("HIDDEN");
+            SetHUDScratchpadVisible(false);
+        };
+    }, []);
+
+    useEffect(() => {
+        SetSessionCategory("WRITING");
+    }, []);
 
     useEffect(() => {
         const words = activeData.text.trim() ? activeData.text.trim().split(/\s+/).length : 0;
@@ -221,6 +255,20 @@ const Writing = ({ onBack, onFinish, initialData, onUpdate }: {
                                             </label>
                                         </div>
                                     )}
+                                </div>
+                                <div className="space-y-4 pt-4 border-t border-white/5">
+                                    <div className="flex items-center justify-between px-2">
+                                        <div className="flex items-center gap-2">
+                                            <Lightbulb className="w-3.5 h-3.5 text-zinc-600" />
+                                            <span className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em]">Scratchpad & Notes</span>
+                                        </div>
+                                    </div>
+                                    <textarea
+                                        value={activeData.notes}
+                                        onChange={(e) => updateActiveData({ notes: e.target.value })}
+                                        placeholder="Brainstorm your outline or take notes here..."
+                                        className="w-full h-32 bg-zinc-900/30 border border-white/5 rounded-2xl p-4 text-xs text-zinc-300 outline-none focus:border-indigo-500/30 transition-all placeholder:text-zinc-800 resize-none font-medium leading-relaxed custom-scrollbar"
+                                    />
                                 </div>
                             </div>
                         </div>

@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Book, Plus, Send, ChevronLeft, Type, Quote, Clock } from 'lucide-react';
-import { AddVocabulary } from '../../../wailsjs/go/main/App';
+import { AddVocabulary, SetSessionCategory, UpdateNotes, SetHUDScratchpadVisible } from '../../../wailsjs/go/main/App';
 import SessionTimer from '../../components/SessionTimer';
+import { EventsOn } from '../../../wailsjs/runtime/runtime';
 
 const Vocabulary = ({ onBack, onFinish, initialData, onUpdate }: {
     onBack: () => void;
@@ -14,10 +15,37 @@ const Vocabulary = ({ onBack, onFinish, initialData, onUpdate }: {
     const [word, setWord] = useState(initialData?.word || '');
     const [definition, setDefinition] = useState(initialData?.definition || '');
     const [sentences, setSentences] = useState(initialData?.sentences || '');
+    const [notes, setNotes] = useState(initialData?.notes || '');
 
     useEffect(() => {
-        if (onUpdate) onUpdate({ word, definition, sentences, duration });
-    }, [word, definition, sentences, duration, onUpdate]);
+        if (onUpdate) onUpdate({ word, definition, sentences, duration, notes });
+        UpdateNotes(notes);
+    }, [word, definition, sentences, duration, notes, onUpdate]);
+
+    useEffect(() => {
+        SetSessionCategory("VOCABULARY");
+
+        const handleBlur = () => {
+            SetHUDScratchpadVisible(true);
+        };
+        const handleFocus = () => {
+            SetHUDScratchpadVisible(false);
+        };
+
+        window.addEventListener('blur', handleBlur);
+        window.addEventListener('focus', handleFocus);
+
+        const unlisten = EventsOn("hud-notes-update", (newNotes: string) => {
+            setNotes(newNotes);
+        });
+        return () => {
+            window.removeEventListener('blur', handleBlur);
+            window.removeEventListener('focus', handleFocus);
+            unlisten();
+            SetSessionCategory("HIDDEN");
+            SetHUDScratchpadVisible(false);
+        };
+    }, []);
     const [saved, setSaved] = useState(false);
     const [recentForges, setRecentForges] = useState<any[]>([]);
 

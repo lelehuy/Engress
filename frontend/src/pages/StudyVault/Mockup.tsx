@@ -23,7 +23,6 @@ const Mockup = ({ onBack, onFinish, initialData, onUpdate }: {
 
     useEffect(() => {
         const handleBlur = () => {
-            // Mockup always supports scratchpad as it's a long simulation
             SetHUDScratchpadVisible(true);
         };
         const handleFocus = () => {
@@ -41,6 +40,7 @@ const Mockup = ({ onBack, onFinish, initialData, onUpdate }: {
             window.removeEventListener('blur', handleBlur);
             window.removeEventListener('focus', handleFocus);
             unlisten();
+            SetSessionCategory("HIDDEN");
             SetHUDScratchpadVisible(false);
         };
     }, []);

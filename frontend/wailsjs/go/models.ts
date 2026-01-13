@@ -6,6 +6,7 @@ export namespace main {
 	    def: string;
 	    sentences: string;
 	    date_added: string;
+	    time: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new VocabItem(source);
@@ -18,6 +19,7 @@ export namespace main {
 	        this.def = source["def"];
 	        this.sentences = source["sentences"];
 	        this.date_added = source["date_added"];
+	        this.time = source["time"];
 	    }
 	}
 	export class DailyLog {
@@ -32,6 +34,7 @@ export namespace main {
 	    content: string;
 	    source_url: string;
 	    screenshot: string;
+	    time: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new DailyLog(source);
@@ -50,6 +53,7 @@ export namespace main {
 	        this.content = source["content"];
 	        this.source_url = source["source_url"];
 	        this.screenshot = source["screenshot"];
+	        this.time = source["time"];
 	    }
 	}
 	export class UserProfile {

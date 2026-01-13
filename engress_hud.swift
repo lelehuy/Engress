@@ -257,9 +257,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             
             if parts.count > 2 {
                 let scratchVisible = parts[2] == "1"
-                scratchWindow?.alphaValue = scratchVisible ? 1.0 : 0.0
                 if scratchVisible {
+                    scratchWindow?.setIsVisible(true)
+                    scratchWindow?.orderFrontRegardless()
+                    scratchWindow?.alphaValue = 1.0
                     scratchWindow?.updateContent(from: notesAppPath)
+                } else {
+                    scratchWindow?.alphaValue = 0.0
+                    scratchWindow?.setIsVisible(false)
                 }
             }
         } catch {

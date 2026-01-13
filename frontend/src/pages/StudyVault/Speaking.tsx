@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Mic, Play, Square, RotateCcw, Save, ChevronLeft, Volume2, Shield, Settings, Lightbulb, ExternalLink, X, Share2, Target, Star, PenTool } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import SessionTimer from '../../components/SessionTimer';
-import { GetAppState, UpdateNotes, SetHUDScratchpadVisible } from "../../../wailsjs/go/main/App";
+import { GetAppState, UpdateNotes, SetHUDScratchpadVisible, SetSessionCategory } from "../../../wailsjs/go/main/App";
 import { EventsOn } from '../../../wailsjs/runtime/runtime';
 import { preparationTips } from '../../data/prepTips';
 
@@ -63,8 +63,13 @@ const Speaking = ({ onBack, onFinish, initialData, onUpdate }: {
             window.removeEventListener('blur', handleBlur);
             window.removeEventListener('focus', handleFocus);
             unlisten();
+            SetSessionCategory("HIDDEN");
             SetHUDScratchpadVisible(false);
         };
+    }, []);
+
+    useEffect(() => {
+        SetSessionCategory("SPEAKING");
     }, []);
 
     const updateVisualizer = () => {

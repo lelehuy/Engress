@@ -10,6 +10,7 @@ const Settings = ({ onRefresh }: { onRefresh?: () => void }) => {
     const [name, setName] = useState('');
     const [testDate, setTestDate] = useState('2026-03-01');
     const [isSaving, setIsSaving] = useState(false);
+    const [isSavingReminders, setIsSavingReminders] = useState(false);
     const [reminderEnabled, setReminderEnabled] = useState(true);
     const [reminderTimes, setReminderTimes] = useState<string[]>(['10:00', '22:00']);
     const [appVersion, setAppVersion] = useState('v0.0.0');
@@ -45,6 +46,13 @@ const Settings = ({ onRefresh }: { onRefresh?: () => void }) => {
         await UpdateReminders(reminderEnabled, reminderTimes);
         if (onRefresh) onRefresh();
         setTimeout(() => setIsSaving(false), 500);
+    };
+
+    const handleSaveReminders = async () => {
+        setIsSavingReminders(true);
+        await UpdateReminders(reminderEnabled, reminderTimes);
+        if (onRefresh) onRefresh();
+        setTimeout(() => setIsSavingReminders(false), 500);
     };
 
     const handleCheckUpdate = async () => {
@@ -240,6 +248,14 @@ const Settings = ({ onRefresh }: { onRefresh?: () => void }) => {
                                     <p className="text-[9px] font-bold text-zinc-800 uppercase tracking-widest text-center">Maximum 4 dynamic checkpoints allowed</p>
                                 </div>
                             )}
+                            <button
+                                onClick={handleSaveReminders}
+                                disabled={isSavingReminders}
+                                className={`w-full py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-3 transition-all ${isSavingReminders ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/20' : 'bg-zinc-900 border border-white/5 text-zinc-400 hover:bg-zinc-800 hover:text-white active:scale-95'}`}
+                            >
+                                {isSavingReminders ? 'Protocols Synced' : 'Update Checkpoints'}
+                                {!isSavingReminders && <Save className="w-4 h-4" />}
+                            </button>
                         </div>
                     </div>
                 </div>
