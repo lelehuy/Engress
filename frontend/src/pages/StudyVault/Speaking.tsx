@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Mic, Play, Square, RotateCcw, Save, ChevronLeft, Volume2, Shield, Settings, Lightbulb, ExternalLink, X, Share2, Target, Star, PenTool } from 'lucide-react';
+import { Mic, Play, Pause, Square, RotateCcw, Save, ChevronLeft, Volume2, Shield, Settings, Lightbulb, ExternalLink, X, Share2, Target, Star, PenTool } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import SessionTimer from '../../components/SessionTimer';
 import { GetAppState, UpdateNotes, SetHUDScratchpadVisible, SetSessionCategory } from "../../../wailsjs/go/main/App";
@@ -22,11 +22,18 @@ const Speaking = ({ onBack, onFinish, initialData, onUpdate }: {
     const [notes, setNotes] = useState(initialData?.notes || '');
     const [audioUrl, setAudioUrl] = useState<string | null>(initialData?.audioUrl || null);
     const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+    const [recordDuration, setRecordDuration] = useState(0);
+    const [isPlaybackMode, setIsPlaybackMode] = useState(false);
+    const [playbackTime, setPlaybackTime] = useState(0);
+    const [audioDuration, setAudioDuration] = useState(0);
+    const [isPlaying, setIsPlaying] = useState(false);
     const [visualizerData, setVisualizerData] = useState<number[]>(new Array(50).fill(4));
     const audioChunksRef = useRef<Blob[]>([]);
     const audioContextRef = useRef<AudioContext | null>(null);
     const analyserRef = useRef<AnalyserNode | null>(null);
     const animationFrameRef = useRef<number | null>(null);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
+    const recordIntervalRef = useRef<any>(null);
 
     useEffect(() => {
         if (onUpdate) {
@@ -75,33 +82,108 @@ const Speaking = ({ onBack, onFinish, initialData, onUpdate }: {
         if (!analyserRef.current || !isRecording) return;
 
         const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
+        // Using getByteTimeDomainData for a waveform look, or stick to frequency
+        // Let's use frequency but with higher sensitivity.
         analyserRef.current.getByteFrequencyData(dataArray);
 
-        const step = Math.floor(dataArray.length / 50);
         const newData = [];
+        const binCount = dataArray.length;
+        // Focus on lower 40% of spectrum where voice lives
+        const focusRange = Math.floor(binCount * 0.4);
+        const step = Math.max(1, Math.floor(focusRange / 50));
+
         for (let i = 0; i < 50; i++) {
-            const val = dataArray[i * step] / 2;
-            newData.push(Math.max(4, val));
+            let sum = 0;
+            const start = i * step;
+            for (let j = 0; j < step; j++) {
+                sum += dataArray[start + j] || 0;
+            }
+            const avg = sum / step;
+
+            // Aggressive normalization for visibility
+            // 0-255 -> 0-140px
+            let val = (avg / 255) * 140;
+
+            // Apply a small boost for quieter speech
+            if (val > 0) val = Math.pow(val / 140, 0.7) * 140;
+
+            newData.push(Math.max(6, val));
         }
+
         setVisualizerData(newData);
         animationFrameRef.current = requestAnimationFrame(updateVisualizer);
     };
 
+    useEffect(() => {
+        if (isRecording) {
+            recordIntervalRef.current = setInterval(() => {
+                setRecordDuration(prev => prev + 1);
+            }, 1000);
+        } else {
+            if (recordIntervalRef.current) clearInterval(recordIntervalRef.current);
+        }
+        return () => {
+            if (recordIntervalRef.current) clearInterval(recordIntervalRef.current);
+        };
+    }, [isRecording]);
+
+    useEffect(() => {
+        if (audioUrl) {
+            // Clean up old audio object if it exists
+            if (audioRef.current) {
+                audioRef.current.pause();
+                audioRef.current = null;
+            }
+
+            const audio = new Audio(audioUrl);
+            audio.onloadedmetadata = () => {
+                setAudioDuration(audio.duration);
+            };
+            audio.ontimeupdate = () => {
+                setPlaybackTime(audio.currentTime);
+            };
+            audio.onended = () => {
+                setIsPlaying(false);
+                setPlaybackTime(0);
+            };
+            audioRef.current = audio;
+        }
+        return () => {
+            if (audioRef.current) {
+                audioRef.current.pause();
+                audioRef.current = null;
+            }
+        };
+    }, [audioUrl]);
+
     const startRecording = async () => {
+        if (hasRecording) {
+            const confirmOverwrite = window.confirm("You already have a recording. Do you want to overwrite it?");
+            if (!confirmOverwrite) return;
+        }
+
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
             // Setup Visualization
             const audioContext = new AudioContext();
+            if (audioContext.state === 'suspended') {
+                await audioContext.resume();
+            }
             const source = audioContext.createMediaStreamSource(stream);
             const analyser = audioContext.createAnalyser();
-            analyser.fftSize = 256;
+            analyser.fftSize = 512; // Increase for better resolution
+            analyser.smoothingTimeConstant = 0.4; // More responsive
+            analyser.minDecibels = -90;
             source.connect(analyser);
 
             audioContextRef.current = audioContext;
             analyserRef.current = analyser;
 
             audioChunksRef.current = [];
+            setRecordDuration(0);
+            setIsPlaybackMode(false);
+            setVisualizerData(new Array(50).fill(4));
 
             // Enhanced compatibility for macOS/Wails
             const mimeType = MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : 'audio/webm';
@@ -125,7 +207,9 @@ const Speaking = ({ onBack, onFinish, initialData, onUpdate }: {
                     setIsProcessing(false);
                 };
 
-                if (audioContextRef.current) audioContextRef.current.close();
+                if (audioContextRef.current) {
+                    audioContextRef.current.close().catch(console.error);
+                }
                 if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
             };
 
@@ -149,16 +233,46 @@ const Speaking = ({ onBack, onFinish, initialData, onUpdate }: {
         }
     };
 
-    const playRecording = () => {
-        if (audioUrl) {
-            const audio = new Audio(audioUrl);
-            audio.play();
+    const togglePlayback = () => {
+        if (audioRef.current) {
+            if (isPlaying) {
+                audioRef.current.pause();
+                setIsPlaying(false);
+            } else {
+                audioRef.current.play();
+                setIsPlaying(true);
+                setIsPlaybackMode(true);
+            }
+        }
+    };
+
+    const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const time = parseFloat(e.target.value);
+        if (audioRef.current) {
+            audioRef.current.currentTime = time;
+            setPlaybackTime(time);
+
+            // Stop animation if it was playing and ended, or just update UI
+            if (time < audioRef.current.duration && !audioRef.current.paused) {
+                setIsPlaying(true);
+            }
+        } else {
+            // Fallback for UI if audio ref isn't ready
+            setPlaybackTime(time);
         }
     };
 
     const handleReset = () => {
+        if (audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current = null;
+        }
         setAudioUrl(null);
         setHasRecording(false);
+        setRecordDuration(0);
+        setPlaybackTime(0);
+        setIsPlaying(false);
+        setIsPlaybackMode(false);
         audioChunksRef.current = [];
     };
 
@@ -285,42 +399,88 @@ const Speaking = ({ onBack, onFinish, initialData, onUpdate }: {
                 <div className="col-span-8 flex flex-col items-center justify-center p-12 bg-white/[0.01] relative">
                     <div className="w-full max-w-2xl space-y-12 z-10">
                         {/* Waveform Visualization */}
-                        <div className="h-64 glass rounded-[3rem] flex items-center justify-center gap-2 px-12 relative overflow-hidden border border-white/5 shadow-2xl">
+                        <div className="h-64 glass rounded-[3rem] flex flex-col items-center justify-center p-8 px-12 relative overflow-hidden border border-white/5 shadow-2xl">
                             <div className="absolute inset-0 bg-gradient-to-b from-rose-500/5 via-transparent to-rose-500/5" />
-                            {visualizerData.map((height, i) => (
+
+                            <div className="flex items-center justify-center gap-2 h-32 w-full mb-4">
+                                {visualizerData.map((height, i) => (
+                                    <motion.div
+                                        key={i}
+                                        initial={{ height: 4 }}
+                                        animate={{
+                                            height: isPlaybackMode ? 4 : height,
+                                            opacity: isRecording ? 1 : 0.2
+                                        }}
+                                        transition={{
+                                            duration: 0.1,
+                                        }}
+                                        className={`w-1 rounded-full ${isRecording ? 'bg-rose-500' : 'bg-zinc-700'}`}
+                                    />
+                                ))}
+                            </div>
+
+                            {hasRecording && (
                                 <motion.div
-                                    key={i}
-                                    initial={{ height: 4 }}
-                                    animate={{
-                                        height: height,
-                                        opacity: isRecording ? 1 : 0.2
-                                    }}
-                                    transition={{
-                                        duration: 0.1,
-                                    }}
-                                    className={`w-1 rounded-full ${isRecording ? 'bg-rose-500' : 'bg-zinc-700'}`}
-                                />
-                            ))}
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="w-full space-y-2 mt-4"
+                                >
+                                    <div className="flex justify-between items-center px-2">
+                                        <span className="text-[10px] font-mono text-zinc-500">
+                                            {Math.floor(playbackTime / 60)}:{(Math.floor(playbackTime % 60)).toString().padStart(2, '0')}
+                                        </span>
+                                        <span className="text-[10px] font-mono text-zinc-500">
+                                            {Math.floor(audioDuration / 60)}:{(Math.floor(audioDuration % 60)).toString().padStart(2, '0')}
+                                        </span>
+                                    </div>
+                                    <input
+                                        type="range"
+                                        min="0"
+                                        max={audioDuration || 0}
+                                        step="0.01"
+                                        value={playbackTime}
+                                        onInput={handleSeek}
+                                        onChange={handleSeek}
+                                        className="w-full h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-rose-500 hover:accent-rose-400 transition-all shadow-sm"
+                                    />
+                                </motion.div>
+                            )}
                         </div>
 
                         <div className="flex flex-col items-center gap-12">
                             <div className="flex flex-col items-center gap-2">
                                 <span className={`text-7xl font-black italic tracking-tighter tabular-nums transition-colors ${isRecording ? 'text-rose-500' : 'text-white'}`}>
-                                    {Math.floor(duration / 60).toString().padStart(2, '0')}:{(duration % 60).toString().padStart(2, '0')}
+                                    {Math.floor(recordDuration / 60).toString().padStart(2, '0')}:{(recordDuration % 60).toString().padStart(2, '0')}
                                 </span>
-                                <span className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.3em]">
-                                    {isProcessing ? 'Finalizing Audio...' : isRecording ? 'Live Feed Extraction' : 'Ready to record'}
+                                <span className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.3em] flex items-center gap-2">
+                                    {isProcessing ? (
+                                        <>Finalizing Audio...</>
+                                    ) : isRecording ? (
+                                        <><span className="w-1.5 h-1.5 bg-rose-500 rounded-full animate-pulse" /> Live Feed Extraction</>
+                                    ) : hasRecording ? (
+                                        <><span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" /> Recording Saved & Ready</>
+                                    ) : (
+                                        <>Ready to record</>
+                                    )}
                                 </span>
                             </div>
 
                             <div className="flex items-center gap-8">
-                                <button
-                                    onClick={handleReset}
-                                    disabled={isRecording || isProcessing}
-                                    className={`p-5 rounded-3xl bg-zinc-900 border border-white/5 transition-all active:scale-95 group ${isRecording || isProcessing ? 'opacity-20' : 'text-zinc-500 hover:text-white'}`}
-                                >
-                                    <RotateCcw className="w-6 h-6 group-hover:rotate-[-45deg] transition-transform" />
-                                </button>
+                                <div className="relative group/reset">
+                                    <button
+                                        onClick={handleReset}
+                                        disabled={isRecording || isProcessing}
+                                        className={`p-5 rounded-3xl bg-zinc-900 border border-white/5 transition-all active:scale-95 group ${isRecording || isProcessing ? 'opacity-20' : 'text-zinc-500 hover:text-white'}`}
+                                    >
+                                        <RotateCcw className="w-6 h-6 group-hover:rotate-[-45deg] transition-transform" />
+                                    </button>
+                                    {hasRecording && !isRecording && (
+                                        <div className="absolute -top-12 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-rose-500 text-white text-[9px] font-black uppercase tracking-widest rounded-lg opacity-0 group-hover/reset:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-xl shadow-rose-500/20">
+                                            Reset to Record Again
+                                            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-rose-500 rotate-45" />
+                                        </div>
+                                    )}
+                                </div>
 
                                 <motion.button
                                     whileTap={{ scale: 0.9 }}
@@ -341,11 +501,11 @@ const Speaking = ({ onBack, onFinish, initialData, onUpdate }: {
                                 </motion.button>
 
                                 <button
-                                    onClick={playRecording}
+                                    onClick={togglePlayback}
                                     disabled={!hasRecording}
                                     className={`p-5 rounded-3xl bg-zinc-900 border border-white/5 transition-all active:scale-95 ${hasRecording ? 'text-emerald-400 hover:bg-emerald-500/10' : 'text-zinc-800'}`}
                                 >
-                                    <Play className="w-6 h-6 fill-current" />
+                                    {isPlaying ? <Pause className="w-6 h-6 fill-current" /> : <Play className="w-6 h-6 fill-current" />}
                                 </button>
                             </div>
                         </div>
