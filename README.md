@@ -1,5 +1,11 @@
 # Engress | The Elite Exam Sentinel 🛡️
 
+[![Version](https://img.shields.io/github/v/release/lelehuy/Engress)](https://github.com/lelehuy/Engress/releases)
+[![License](https://img.shields.io/github/license/lelehuy/Engress)](./LICENSE)
+[![Stars](https://img.shields.io/github/stars/lelehuy/Engress)](https://github.com/lelehuy/Engress/stargazers)
+[![Issues](https://img.shields.io/github/issues/lelehuy/Engress)](https://github.com/lelehuy/Engress/issues)
+[![Repo Size](https://img.shields.io/github/repo-size/lelehuy/Engress)](https://github.com/lelehuy/Engress)
+
 **Transform your preparation into a mission. This is no longer just study; it is execution.**
 
 Engress is your desktop command center for IELTS/TOEFL mastery. It combines high-performance tracking tools with a unique "Sentinel" HUD to ensure you maintain discipline, even when distractions surround you.
@@ -32,18 +38,24 @@ Strategic intelligence for your progress:
 
 ## 📥 Installation
 
-1. Download the latest `Engress-Setup.dmg` from the Releases page.
-2. Drag **Engress** to your Applications folder.
+1. Download the latest `Engress-Setup.dmg` (for macOS) or installation package from the [Releases](https://github.com/lelehuy/Engress/releases) page.
+2. Install the application to your system.
 3. Launch Engress.
-    - *Note: On first run, you may need to approve the app in System Settings > Privacy & Security.*
+    - *Note: On macOS, you may need to approve the app in System Settings > Privacy & Security on first run.*
 
 ---
 
 ## 🛡️ Privacy Protocol
-Engress operates continuously on your local machine.
+Engress operates entirely on your local machine.
 - **0% Data Leak**: Your essays, recordings, and scores stay on your disk.
 - **Offline Capable**: No internet needed for core functionality.
 
 ---
 
+## 🛠️ For Developers
+Looking to contribute or build from source? Check out our [Development Guide](./development.md).
+
+---
+
 *Stay Disciplined. Trust the Protocol.*
+
