@@ -1,7 +1,7 @@
 # Engress | The Elite Exam Sentinel 🛡️
 
 [![License](https://img.shields.io/github/license/lelehuy/Engress)](./LICENSE)
-![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows-blue)
+![Platform](https://img.shields.io/badge/platform-macOS-lightgrey)
 [![Downloads](https://img.shields.io/github/downloads/lelehuy/Engress/total)](https://github.com/lelehuy/Engress/releases)
 
 **Transform your preparation into a mission. This is no longer just study; it is execution.**
