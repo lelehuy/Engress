@@ -1,10 +1,8 @@
 # Engress | The Elite Exam Sentinel 🛡️
 
-[![Version](https://img.shields.io/github/v/release/lelehuy/Engress)](https://github.com/lelehuy/Engress/releases)
 [![License](https://img.shields.io/github/license/lelehuy/Engress)](./LICENSE)
-[![Stars](https://img.shields.io/github/stars/lelehuy/Engress)](https://github.com/lelehuy/Engress/stargazers)
-[![Issues](https://img.shields.io/github/issues/lelehuy/Engress)](https://github.com/lelehuy/Engress/issues)
-[![Repo Size](https://img.shields.io/github/repo-size/lelehuy/Engress)](https://github.com/lelehuy/Engress)
+![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows-blue)
+[![Downloads](https://img.shields.io/github/downloads/lelehuy/Engress/total)](https://github.com/lelehuy/Engress/releases)
 
 **Transform your preparation into a mission. This is no longer just study; it is execution.**
 
