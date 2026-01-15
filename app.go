@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -42,7 +43,26 @@ func (a *App) startup(ctx context.Context) {
 		// Clean up any existing instances first
 		exec.Command("pkill", "engress_hud").Run()
 		time.Sleep(200 * time.Millisecond)
-		exec.Command("./engress_hud").Run()
+
+		// Try to find the HUD binary
+		hudName := "engress_hud"
+		paths := []string{
+			"./" + hudName, // Current Dir
+			filepath.Join(filepath.Dir(os.Args[0]), hudName), // Next to executable
+		}
+
+		// If running from source/dev, it might be in root
+		if exe, err := os.Executable(); err == nil {
+			paths = append(paths, filepath.Join(filepath.Dir(exe), hudName))
+		}
+
+		for _, p := range paths {
+			if _, err := os.Stat(p); err == nil {
+				absPath, _ := filepath.Abs(p)
+				exec.Command(absPath).Run()
+				return
+			}
+		}
 	}()
 	go a.startHUDCommandListener()
 	go a.startHUDNotesWatcher()
@@ -181,11 +201,9 @@ func (a *App) SetPauseState(paused bool) {
 			Buttons:       []string{"Understood"},
 			DefaultButton: "Understood",
 		})
-		// Force HUD update immediately
-		os.WriteFile("/tmp/sentinel_timer.txt", []byte("HIDDEN"), 0644)
-	} else {
-		a.UpdateTrayTime(a.currentTimeStr)
 	}
+	// Update HUD state properly instead of forcing HIDDEN
+	a.UpdateTrayTime(a.currentTimeStr)
 }
 
 func (a *App) startHUDCommandListener() {
@@ -506,10 +524,16 @@ func (a *App) UpdateTrayTime(timeStr string) {
 	// 1. Update Window Title (Fallback/Internal)
 	timeStr = strings.TrimSpace(timeStr)
 	a.currentTimeStr = timeStr
+
+	displayTime := timeStr
+	if displayTime == "" || displayTime == "---" {
+		displayTime = "0:00"
+	}
+
 	if timeStr == "" {
 		runtime.WindowSetTitle(a.ctx, "Engress")
 	} else {
-		runtime.WindowSetTitle(a.ctx, "Engress ["+timeStr+"]")
+		runtime.WindowSetTitle(a.ctx, "Engress ["+displayTime+"]")
 	}
 
 	// 2. Update macOS HUD Helper
@@ -522,14 +546,25 @@ func (a *App) UpdateTrayTime(timeStr string) {
 	upperTime := strings.ToUpper(timeStr)
 	upperCat := strings.ToUpper(a.currentCategory)
 
-	// If any part of the state says HIDDEN or HIDE, or if time is empty
-	// We send a single "HIDDEN" command so the Swift HUD knows to go alpha 0
-	if a.isPaused || timeStr == "" || upperTime == "HIDDEN" || upperTime == "HIDE" || upperTime == "---" || upperCat == "HIDDEN" || upperCat == "" {
+	// We only hide if explicitly requested, if paused, or if we have no active module and scratchpad is off
+	if a.isPaused || upperTime == "HIDDEN" || upperTime == "HIDE" || upperCat == "HIDDEN" {
 		os.WriteFile("/tmp/sentinel_timer.txt", []byte("HIDDEN"), 0644)
-	} else {
-		content := fmt.Sprintf("%s|%s|%s", timeStr, a.currentCategory, scratchVisible)
-		os.WriteFile("/tmp/sentinel_timer.txt", []byte(content), 0644)
+		return
 	}
+
+	// If no category is set and no scratchpad is needed, we hide it.
+	if (a.currentCategory == "" || upperCat == "---") && !a.isHUDScratchpadVisible {
+		os.WriteFile("/tmp/sentinel_timer.txt", []byte("HIDDEN"), 0644)
+		return
+	}
+
+	displayCat := a.currentCategory
+	if displayCat == "" || upperCat == "---" {
+		displayCat = "Engress"
+	}
+
+	content := fmt.Sprintf("%s|%s|%s", displayTime, strings.ToUpper(displayCat), scratchVisible)
+	os.WriteFile("/tmp/sentinel_timer.txt", []byte(content), 0644)
 }
 
 func (a *App) UpdateNotes(notes string) {
